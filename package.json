@@ -1,0 +1,28 @@
+{
+  "name": "school-pulse",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Self-hosted live dashboard for K-12 grades, assignments, and homework.",
+  "type": "module",
+  "bin": {
+    "school-pulse": "dist/src/cli.js"
+  },
+  "scripts": {
+    "build": "tsc --pretty false && tsc -p tsconfig.web.json --pretty false",
+    "typecheck": "tsc --strict --noEmit --pretty false && tsc -p tsconfig.web.json --strict --noEmit --pretty false",
+    "test": "npm run build && node --disable-warning=ExperimentalWarning --test --test-reporter spec dist/tests/*.test.js",
+    "demo": "node --disable-warning=ExperimentalWarning dist/src/cli.js demo",
+    "ingest": "node --disable-warning=ExperimentalWarning dist/src/cli.js ingest",
+    "start": "node --disable-warning=ExperimentalWarning dist/src/cli.js serve"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "node-html-parser": "^7.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.18.12",
+    "typescript": "5.6.3"
+  }
+}

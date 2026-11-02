@@ -1,0 +1,500 @@
+{
+  "schoolPulse": {
+    "exportedAt": "2026-11-02T16:40:00Z",
+    "students": {
+      "900000000002": {
+        "name": "Student B",
+        "school": "Northwind High"
+      }
+    }
+  },
+  "student": {
+    "userId": "900000000002",
+    "fullName": "Student B",
+    "school": "Northwind High"
+  },
+  "courses": {
+    "courses": [
+      {
+        "id": "900000000501",
+        "name": "Biology edges",
+        "section": "Period 3",
+        "courseState": "ACTIVE",
+        "alternateLink": "https://classroom.google.com/c/900000000501",
+        "gradebookSettings": {
+          "calculationType": "WEIGHTED_CATEGORIES",
+          "displaySetting": "SHOW_OVERALL_GRADE",
+          "gradeCategories": [
+            {
+              "id": "cat-hw",
+              "name": "Homework",
+              "weight": 200000
+            },
+            {
+              "id": "cat-practice",
+              "name": "Practice",
+              "weight": 100000
+            },
+            {
+              "id": "cat-essay",
+              "name": "Essays",
+              "weight": 700000
+            }
+          ]
+        }
+      },
+      {
+        "id": "900000000502",
+        "name": "Study Skills",
+        "courseState": "ACTIVE",
+        "gradebookSettings": {
+          "calculationType": "TOTAL_POINTS",
+          "displaySetting": "HIDE_OVERALL_GRADE",
+          "gradeCategories": []
+        }
+      },
+      {
+        "id": "900000000503",
+        "name": "Old Art",
+        "courseState": "ARCHIVED",
+        "gradebookSettings": {
+          "calculationType": "TOTAL_POINTS",
+          "displaySetting": "SHOW_OVERALL_GRADE"
+        }
+      }
+    ]
+  },
+  "courseWork": {
+    "900000000501": [
+      {
+        "courseWork": [
+          {
+            "state": "PUBLISHED",
+            "workType": "ASSIGNMENT",
+            "assigneeMode": "ALL_STUDENTS",
+            "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+            "associatedWithDeveloper": false,
+            "creatorUserId": "900000000050",
+            "creationTime": "2026-10-01T15:00:00.000Z",
+            "updateTime": "2026-11-01T15:00:00.000Z",
+            "materials": [],
+            "courseId": "900000000501",
+            "id": "900000000601",
+            "title": "Problem set",
+            "maxPoints": 10,
+            "dueDate": {
+              "year": 2026,
+              "month": 10,
+              "day": 20
+            },
+            "gradeCategory": {
+              "id": "cat-hw",
+              "name": "Homework"
+            },
+            "gradingPeriodId": "gp-q2"
+          },
+          {
+            "state": "PUBLISHED",
+            "workType": "ASSIGNMENT",
+            "assigneeMode": "ALL_STUDENTS",
+            "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+            "associatedWithDeveloper": false,
+            "creatorUserId": "900000000050",
+            "creationTime": "2026-10-01T15:00:00.000Z",
+            "updateTime": "2026-11-01T15:00:00.000Z",
+            "materials": [],
+            "courseId": "900000000501",
+            "id": "900000000602",
+            "title": "Essay",
+            "maxPoints": 20,
+            "dueDate": {
+              "year": 2026,
+              "month": 10,
+              "day": 28
+            },
+            "gradeCategory": {
+              "id": "cat-essay",
+              "name": "Essays"
+            },
+            "gradingPeriodId": "gp-q2"
+          },
+          {
+            "state": "PUBLISHED",
+            "workType": "ASSIGNMENT",
+            "assigneeMode": "ALL_STUDENTS",
+            "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+            "associatedWithDeveloper": false,
+            "creatorUserId": "900000000050",
+            "creationTime": "2026-10-01T15:00:00.000Z",
+            "updateTime": "2026-11-01T15:00:00.000Z",
+            "materials": [],
+            "courseId": "900000000501",
+            "id": "900000000603",
+            "title": "Reading check",
+            "maxPoints": 5,
+            "gradeCategory": {
+              "id": "cat-hw",
+              "name": "Homework"
+            },
+            "gradingPeriodId": "gp-q2"
+          },
+          {
+            "state": "PUBLISHED",
+            "workType": "ASSIGNMENT",
+            "assigneeMode": "ALL_STUDENTS",
+            "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+            "associatedWithDeveloper": false,
+            "creatorUserId": "900000000050",
+            "creationTime": "2026-10-01T15:00:00.000Z",
+            "updateTime": "2026-11-01T15:00:00.000Z",
+            "materials": [],
+            "courseId": "900000000501",
+            "id": "900000000604",
+            "title": "Oral report",
+            "maxPoints": 10,
+            "dueDate": {
+              "year": 2026,
+              "month": 10,
+              "day": 15
+            },
+            "gradingPeriodId": "gp-q2"
+          }
+        ],
+        "nextPageToken": "page-2"
+      },
+      {
+        "courseWork": [
+          {
+            "state": "PUBLISHED",
+            "workType": "ASSIGNMENT",
+            "assigneeMode": "ALL_STUDENTS",
+            "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+            "associatedWithDeveloper": false,
+            "creatorUserId": "900000000050",
+            "creationTime": "2026-10-01T15:00:00.000Z",
+            "updateTime": "2026-11-01T15:00:00.000Z",
+            "materials": [],
+            "courseId": "900000000501",
+            "id": "900000000605",
+            "title": "Page two worksheet",
+            "maxPoints": 10,
+            "dueDate": {
+              "year": 2026,
+              "month": 11,
+              "day": 4
+            },
+            "gradeCategory": {
+              "id": "cat-hw",
+              "name": "Homework"
+            },
+            "gradingPeriodId": "gp-q2"
+          },
+          {
+            "state": "PUBLISHED",
+            "workType": "ASSIGNMENT",
+            "assigneeMode": "ALL_STUDENTS",
+            "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+            "associatedWithDeveloper": false,
+            "creatorUserId": "900000000050",
+            "creationTime": "2026-10-01T15:00:00.000Z",
+            "updateTime": "2026-11-01T15:00:00.000Z",
+            "materials": [],
+            "courseId": "900000000501",
+            "id": "900000000606",
+            "title": "Makeup drill",
+            "maxPoints": 8,
+            "dueDate": {
+              "year": 2026,
+              "month": 10,
+              "day": 9
+            },
+            "gradingPeriodId": "gp-q1"
+          },
+          {
+            "state": "PUBLISHED",
+            "workType": "ASSIGNMENT",
+            "assigneeMode": "INDIVIDUAL_STUDENTS",
+            "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+            "associatedWithDeveloper": false,
+            "creatorUserId": "900000000050",
+            "creationTime": "2026-10-01T15:00:00.000Z",
+            "updateTime": "2026-11-01T15:00:00.000Z",
+            "materials": [],
+            "courseId": "900000000501",
+            "id": "900000000607",
+            "title": "Poster for peers",
+            "maxPoints": 10,
+            "individualStudentsOptions": {
+              "studentIds": [
+                "900000000007"
+              ]
+            },
+            "gradingPeriodId": "gp-q2"
+          },
+          {
+            "state": "DRAFT",
+            "workType": "ASSIGNMENT",
+            "assigneeMode": "ALL_STUDENTS",
+            "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+            "associatedWithDeveloper": false,
+            "creatorUserId": "900000000050",
+            "creationTime": "2026-10-01T15:00:00.000Z",
+            "updateTime": "2026-11-01T15:00:00.000Z",
+            "materials": [],
+            "courseId": "900000000501",
+            "id": "900000000608",
+            "title": "Secret draft",
+            "maxPoints": 5
+          },
+          {
+            "state": "DELETED",
+            "workType": "ASSIGNMENT",
+            "assigneeMode": "ALL_STUDENTS",
+            "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+            "associatedWithDeveloper": false,
+            "creatorUserId": "900000000050",
+            "creationTime": "2026-10-01T15:00:00.000Z",
+            "updateTime": "2026-11-01T15:00:00.000Z",
+            "materials": [],
+            "courseId": "900000000501",
+            "id": "900000000609",
+            "title": "Old quiz",
+            "maxPoints": 5
+          }
+        ],
+        "nextPageToken": ""
+      }
+    ],
+    "900000000502": {
+      "courseWork": [
+        {
+          "state": "PUBLISHED",
+          "workType": "ASSIGNMENT",
+          "assigneeMode": "ALL_STUDENTS",
+          "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+          "associatedWithDeveloper": false,
+          "creatorUserId": "900000000050",
+          "creationTime": "2026-10-01T15:00:00.000Z",
+          "updateTime": "2026-11-01T15:00:00.000Z",
+          "materials": [],
+          "courseId": "900000000502",
+          "id": "900000000701",
+          "title": "Planner check",
+          "maxPoints": 5,
+          "gradingPeriodId": "gp-q2"
+        }
+      ]
+    },
+    "900000000503": {
+      "courseWork": [
+        {
+          "state": "PUBLISHED",
+          "workType": "ASSIGNMENT",
+          "assigneeMode": "ALL_STUDENTS",
+          "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+          "associatedWithDeveloper": false,
+          "creatorUserId": "900000000050",
+          "creationTime": "2026-10-01T15:00:00.000Z",
+          "updateTime": "2026-11-01T15:00:00.000Z",
+          "materials": [],
+          "courseId": "900000000503",
+          "id": "900000000801",
+          "title": "Sketch",
+          "maxPoints": 10
+        }
+      ]
+    }
+  },
+  "studentSubmissions": {
+    "900000000501": {
+      "studentSubmissions": [
+        {
+          "userId": "900000000002",
+          "late": false,
+          "courseWorkType": "ASSIGNMENT",
+          "assignmentSubmission": {
+            "attachments": []
+          },
+          "submissionHistory": [],
+          "courseId": "900000000501",
+          "courseWorkId": "900000000601",
+          "id": "sub-601",
+          "state": "RETURNED",
+          "assignedGrade": 8
+        },
+        {
+          "userId": "900000000002",
+          "late": false,
+          "courseWorkType": "ASSIGNMENT",
+          "assignmentSubmission": {
+            "attachments": []
+          },
+          "submissionHistory": [],
+          "courseId": "900000000501",
+          "courseWorkId": "900000000602",
+          "id": "sub-602",
+          "state": "RETURNED",
+          "assignedGrade": 18
+        },
+        {
+          "userId": "900000000002",
+          "late": false,
+          "courseWorkType": "ASSIGNMENT",
+          "assignmentSubmission": {
+            "attachments": []
+          },
+          "submissionHistory": [],
+          "courseId": "900000000501",
+          "courseWorkId": "900000000603",
+          "id": "sub-603",
+          "state": "CREATED"
+        },
+        {
+          "userId": "900000000002",
+          "late": false,
+          "courseWorkType": "ASSIGNMENT",
+          "assignmentSubmission": {
+            "attachments": []
+          },
+          "submissionHistory": [],
+          "courseId": "900000000501",
+          "courseWorkId": "900000000604",
+          "id": "sub-604",
+          "state": "RETURNED"
+        },
+        {
+          "userId": "900000000002",
+          "late": false,
+          "courseWorkType": "ASSIGNMENT",
+          "assignmentSubmission": {
+            "attachments": []
+          },
+          "submissionHistory": [],
+          "courseId": "900000000501",
+          "courseWorkId": "900000000605",
+          "id": "sub-605",
+          "state": "NEW"
+        },
+        {
+          "userId": "900000000002",
+          "late": false,
+          "courseWorkType": "ASSIGNMENT",
+          "assignmentSubmission": {
+            "attachments": []
+          },
+          "submissionHistory": [],
+          "courseId": "900000000501",
+          "courseWorkId": "900000000606",
+          "id": "sub-606",
+          "state": "NEW",
+          "draftGrade": 0
+        }
+      ]
+    },
+    "900000000502": {
+      "studentSubmissions": [
+        {
+          "userId": "900000000002",
+          "late": false,
+          "courseWorkType": "ASSIGNMENT",
+          "assignmentSubmission": {
+            "attachments": []
+          },
+          "submissionHistory": [],
+          "courseId": "900000000502",
+          "courseWorkId": "900000000701",
+          "id": "sub-701",
+          "state": "RETURNED",
+          "assignedGrade": 5
+        }
+      ]
+    },
+    "900000000503": {
+      "studentSubmissions": [
+        {
+          "userId": "900000000002",
+          "late": false,
+          "courseWorkType": "ASSIGNMENT",
+          "assignmentSubmission": {
+            "attachments": []
+          },
+          "submissionHistory": [],
+          "courseId": "900000000503",
+          "courseWorkId": "900000000801",
+          "id": "sub-801",
+          "state": "RETURNED",
+          "assignedGrade": 9
+        }
+      ]
+    }
+  },
+  "gradingPeriodSettings": {
+    "900000000501": {
+      "gradingPeriods": [
+        {
+          "id": "gp-q1",
+          "title": "Q1",
+          "startDate": {
+            "year": 2026,
+            "month": 8,
+            "day": 18
+          },
+          "endDate": {
+            "year": 2026,
+            "month": 10,
+            "day": 16
+          }
+        },
+        {
+          "id": "gp-q2",
+          "title": "Q2",
+          "startDate": {
+            "year": 2026,
+            "month": 10,
+            "day": 19
+          },
+          "endDate": {
+            "year": 2026,
+            "month": 12,
+            "day": 18
+          }
+        }
+      ]
+    },
+    "900000000502": {
+      "gradingPeriods": [
+        {
+          "id": "gp-q1",
+          "title": "Q1",
+          "startDate": {
+            "year": 2026,
+            "month": 8,
+            "day": 18
+          },
+          "endDate": {
+            "year": 2026,
+            "month": 10,
+            "day": 16
+          }
+        },
+        {
+          "id": "gp-q2",
+          "title": "Q2",
+          "startDate": {
+            "year": 2026,
+            "month": 10,
+            "day": 19
+          },
+          "endDate": {
+            "year": 2026,
+            "month": 12,
+            "day": 18
+          }
+        }
+      ]
+    }
+  },
+  "guardians": {
+    "guardians": []
+  }
+}

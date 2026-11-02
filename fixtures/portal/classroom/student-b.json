@@ -1,0 +1,615 @@
+{
+  "schoolPulse": {
+    "exportedAt": "2026-11-02T16:40:00Z",
+    "students": {
+      "900000000001": {
+        "name": "Student B",
+        "school": "Northwind High"
+      }
+    }
+  },
+  "student": {
+    "userId": "900000000001",
+    "fullName": "Student B",
+    "school": "Northwind High"
+  },
+  "courses": {
+    "courses": [
+      {
+        "id": "900000000101",
+        "name": "Biology",
+        "section": "Period 1",
+        "descriptionHeading": "Biology",
+        "room": "201",
+        "ownerId": "900000000050",
+        "courseState": "ACTIVE",
+        "alternateLink": "https://classroom.google.com/c/900000000101",
+        "guardiansEnabled": true,
+        "creationTime": "2026-08-18T14:00:00.000Z",
+        "updateTime": "2026-11-01T14:00:00.000Z",
+        "gradebookSettings": {
+          "calculationType": "WEIGHTED_CATEGORIES",
+          "displaySetting": "SHOW_OVERALL_GRADE",
+          "gradeCategories": [
+            {
+              "id": "cat-hw",
+              "name": "Homework",
+              "weight": 200000
+            },
+            {
+              "id": "cat-quiz",
+              "name": "Quizzes",
+              "weight": 400000
+            },
+            {
+              "id": "cat-lab",
+              "name": "Labs",
+              "weight": 400000
+            }
+          ]
+        }
+      },
+      {
+        "id": "900000000102",
+        "name": "World History",
+        "section": "Period 2",
+        "room": "118",
+        "ownerId": "900000000051",
+        "courseState": "ACTIVE",
+        "alternateLink": "https://classroom.google.com/c/900000000102",
+        "guardiansEnabled": true,
+        "gradebookSettings": {
+          "calculationType": "TOTAL_POINTS",
+          "displaySetting": "SHOW_OVERALL_GRADE",
+          "gradeCategories": []
+        }
+      }
+    ],
+    "nextPageToken": ""
+  },
+  "courseWork": {
+    "900000000101": {
+      "courseWork": [
+        {
+          "state": "PUBLISHED",
+          "workType": "ASSIGNMENT",
+          "assigneeMode": "ALL_STUDENTS",
+          "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+          "associatedWithDeveloper": false,
+          "creatorUserId": "900000000050",
+          "creationTime": "2026-10-01T15:00:00.000Z",
+          "updateTime": "2026-11-01T15:00:00.000Z",
+          "materials": [],
+          "courseId": "900000000101",
+          "id": "900000000301",
+          "title": "Homework packet",
+          "maxPoints": 20,
+          "dueDate": {
+            "year": 2026,
+            "month": 11,
+            "day": 2
+          },
+          "dueTime": {
+            "hours": 21,
+            "minutes": 59
+          },
+          "gradeCategory": {
+            "id": "cat-hw",
+            "name": "Homework"
+          },
+          "gradingPeriodId": "gp-q2",
+          "alternateLink": "https://classroom.google.com/c/900000000101/a/900000000301/details"
+        },
+        {
+          "state": "PUBLISHED",
+          "workType": "ASSIGNMENT",
+          "assigneeMode": "ALL_STUDENTS",
+          "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+          "associatedWithDeveloper": false,
+          "creatorUserId": "900000000050",
+          "creationTime": "2026-10-01T15:00:00.000Z",
+          "updateTime": "2026-11-01T15:00:00.000Z",
+          "materials": [],
+          "courseId": "900000000101",
+          "id": "900000000302",
+          "title": "Reading check",
+          "maxPoints": 5,
+          "gradeCategory": {
+            "id": "cat-hw",
+            "name": "Homework"
+          },
+          "gradingPeriodId": "gp-q2",
+          "alternateLink": "https://classroom.google.com/c/900000000101/a/900000000302/details"
+        },
+        {
+          "state": "PUBLISHED",
+          "workType": "ASSIGNMENT",
+          "assigneeMode": "ALL_STUDENTS",
+          "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+          "associatedWithDeveloper": false,
+          "creatorUserId": "900000000050",
+          "creationTime": "2026-10-01T15:00:00.000Z",
+          "updateTime": "2026-11-01T15:00:00.000Z",
+          "materials": [],
+          "courseId": "900000000101",
+          "id": "900000000303",
+          "title": "Cell quiz",
+          "maxPoints": 10,
+          "dueDate": {
+            "year": 2026,
+            "month": 10,
+            "day": 18
+          },
+          "gradeCategory": {
+            "id": "cat-quiz",
+            "name": "Quizzes"
+          },
+          "gradingPeriodId": "gp-q2"
+        },
+        {
+          "state": "PUBLISHED",
+          "workType": "ASSIGNMENT",
+          "assigneeMode": "ALL_STUDENTS",
+          "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+          "associatedWithDeveloper": false,
+          "creatorUserId": "900000000050",
+          "creationTime": "2026-10-01T15:00:00.000Z",
+          "updateTime": "2026-11-01T15:00:00.000Z",
+          "materials": [],
+          "courseId": "900000000101",
+          "id": "900000000304",
+          "title": "Quiz 3",
+          "maxPoints": 5,
+          "dueDate": {
+            "year": 2026,
+            "month": 10,
+            "day": 30
+          },
+          "dueTime": {
+            "minutes": 45
+          },
+          "gradeCategory": {
+            "id": "cat-quiz",
+            "name": "Quizzes"
+          },
+          "gradingPeriodId": "gp-q2"
+        },
+        {
+          "state": "PUBLISHED",
+          "workType": "ASSIGNMENT",
+          "assigneeMode": "ALL_STUDENTS",
+          "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+          "associatedWithDeveloper": false,
+          "creatorUserId": "900000000050",
+          "creationTime": "2026-10-01T15:00:00.000Z",
+          "updateTime": "2026-11-01T15:00:00.000Z",
+          "materials": [],
+          "courseId": "900000000101",
+          "id": "900000000305",
+          "title": "Osmosis lab",
+          "maxPoints": 20,
+          "dueDate": {
+            "year": 2026,
+            "month": 10,
+            "day": 21
+          },
+          "gradeCategory": {
+            "id": "cat-lab",
+            "name": "Labs"
+          },
+          "gradingPeriodId": "gp-q2"
+        },
+        {
+          "state": "PUBLISHED",
+          "workType": "ASSIGNMENT",
+          "assigneeMode": "ALL_STUDENTS",
+          "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+          "associatedWithDeveloper": false,
+          "creatorUserId": "900000000050",
+          "creationTime": "2026-10-01T15:00:00.000Z",
+          "updateTime": "2026-11-01T15:00:00.000Z",
+          "materials": [],
+          "courseId": "900000000101",
+          "id": "900000000306",
+          "title": "Enzyme poster",
+          "maxPoints": 15,
+          "dueDate": {
+            "year": 2026,
+            "month": 10,
+            "day": 28
+          },
+          "gradeCategory": {
+            "id": "cat-lab",
+            "name": "Labs"
+          },
+          "gradingPeriodId": "gp-q2"
+        },
+        {
+          "state": "PUBLISHED",
+          "workType": "ASSIGNMENT",
+          "assigneeMode": "INDIVIDUAL_STUDENTS",
+          "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+          "associatedWithDeveloper": false,
+          "creatorUserId": "900000000050",
+          "creationTime": "2026-10-01T15:00:00.000Z",
+          "updateTime": "2026-11-01T15:00:00.000Z",
+          "materials": [],
+          "courseId": "900000000101",
+          "id": "900000000307",
+          "title": "Peer review",
+          "maxPoints": 10,
+          "dueDate": {
+            "year": 2026,
+            "month": 11,
+            "day": 1
+          },
+          "individualStudentsOptions": {
+            "studentIds": [
+              "900000000007"
+            ]
+          },
+          "gradingPeriodId": "gp-q2"
+        },
+        {
+          "state": "DRAFT",
+          "workType": "ASSIGNMENT",
+          "assigneeMode": "ALL_STUDENTS",
+          "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+          "associatedWithDeveloper": false,
+          "creatorUserId": "900000000050",
+          "creationTime": "2026-10-01T15:00:00.000Z",
+          "updateTime": "2026-11-01T15:00:00.000Z",
+          "materials": [],
+          "courseId": "900000000101",
+          "id": "900000000308",
+          "title": "Unpublished lab",
+          "maxPoints": 10,
+          "gradingPeriodId": "gp-q2"
+        },
+        {
+          "state": "DELETED",
+          "workType": "ASSIGNMENT",
+          "assigneeMode": "ALL_STUDENTS",
+          "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+          "associatedWithDeveloper": false,
+          "creatorUserId": "900000000050",
+          "creationTime": "2026-10-01T15:00:00.000Z",
+          "updateTime": "2026-11-01T15:00:00.000Z",
+          "materials": [],
+          "courseId": "900000000101",
+          "id": "900000000309",
+          "title": "Removed quiz",
+          "maxPoints": 10,
+          "gradingPeriodId": "gp-q2"
+        },
+        {
+          "state": "PUBLISHED",
+          "workType": "ASSIGNMENT",
+          "assigneeMode": "ALL_STUDENTS",
+          "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+          "associatedWithDeveloper": false,
+          "creatorUserId": "900000000050",
+          "creationTime": "2026-10-01T15:00:00.000Z",
+          "updateTime": "2026-11-01T15:00:00.000Z",
+          "materials": [],
+          "courseId": "900000000101",
+          "id": "900000000310",
+          "title": "Safety quiz",
+          "maxPoints": 10,
+          "dueDate": {
+            "year": 2026,
+            "month": 9,
+            "day": 15
+          },
+          "gradeCategory": {
+            "id": "cat-quiz",
+            "name": "Quizzes"
+          },
+          "gradingPeriodId": "gp-q1"
+        }
+      ],
+      "nextPageToken": ""
+    },
+    "900000000102": {
+      "courseWork": [
+        {
+          "state": "PUBLISHED",
+          "workType": "ASSIGNMENT",
+          "assigneeMode": "ALL_STUDENTS",
+          "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+          "associatedWithDeveloper": false,
+          "creatorUserId": "900000000050",
+          "creationTime": "2026-10-01T15:00:00.000Z",
+          "updateTime": "2026-11-01T15:00:00.000Z",
+          "materials": [],
+          "courseId": "900000000102",
+          "id": "900000000401",
+          "title": "Map quiz",
+          "maxPoints": 20,
+          "dueDate": {
+            "year": 2026,
+            "month": 10,
+            "day": 24
+          },
+          "gradingPeriodId": "gp-q2"
+        },
+        {
+          "state": "PUBLISHED",
+          "workType": "ASSIGNMENT",
+          "assigneeMode": "ALL_STUDENTS",
+          "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+          "associatedWithDeveloper": false,
+          "creatorUserId": "900000000050",
+          "creationTime": "2026-10-01T15:00:00.000Z",
+          "updateTime": "2026-11-01T15:00:00.000Z",
+          "materials": [],
+          "courseId": "900000000102",
+          "id": "900000000402",
+          "title": "Primary source notes",
+          "maxPoints": 10,
+          "dueDate": {
+            "year": 2026,
+            "month": 11,
+            "day": 6
+          },
+          "dueTime": {
+            "hours": 23,
+            "minutes": 59
+          },
+          "gradingPeriodId": "gp-q2",
+          "alternateLink": "https://classroom.google.com/c/900000000102/a/900000000402/details"
+        },
+        {
+          "state": "PUBLISHED",
+          "workType": "ASSIGNMENT",
+          "assigneeMode": "ALL_STUDENTS",
+          "submissionModificationMode": "MODIFIABLE_UNTIL_TURNED_IN",
+          "associatedWithDeveloper": false,
+          "creatorUserId": "900000000050",
+          "creationTime": "2026-10-01T15:00:00.000Z",
+          "updateTime": "2026-11-01T15:00:00.000Z",
+          "materials": [],
+          "courseId": "900000000102",
+          "id": "900000000403",
+          "title": "Journal",
+          "maxPoints": 0,
+          "gradingPeriodId": "gp-q2"
+        }
+      ],
+      "nextPageToken": ""
+    }
+  },
+  "studentSubmissions": {
+    "900000000101": {
+      "studentSubmissions": [
+        {
+          "userId": "900000000001",
+          "late": false,
+          "courseWorkType": "ASSIGNMENT",
+          "assignmentSubmission": {
+            "attachments": []
+          },
+          "submissionHistory": [],
+          "courseId": "900000000101",
+          "courseWorkId": "900000000301",
+          "id": "sub-301",
+          "state": "RETURNED",
+          "assignedGrade": 19,
+          "creationTime": "2026-10-28T15:00:00.000Z",
+          "updateTime": "2026-11-02T15:00:00.000Z"
+        },
+        {
+          "userId": "900000000001",
+          "late": false,
+          "courseWorkType": "ASSIGNMENT",
+          "assignmentSubmission": {
+            "attachments": []
+          },
+          "submissionHistory": [],
+          "courseId": "900000000101",
+          "courseWorkId": "900000000302",
+          "id": "sub-302",
+          "state": "CREATED",
+          "creationTime": "2026-10-20T15:00:00.000Z",
+          "updateTime": "2026-10-20T15:00:00.000Z"
+        },
+        {
+          "userId": "900000000001",
+          "late": false,
+          "courseWorkType": "ASSIGNMENT",
+          "assignmentSubmission": {
+            "attachments": []
+          },
+          "submissionHistory": [],
+          "courseId": "900000000101",
+          "courseWorkId": "900000000303",
+          "id": "sub-303",
+          "state": "RETURNED",
+          "assignedGrade": 9
+        },
+        {
+          "userId": "900000000001",
+          "late": true,
+          "courseWorkType": "ASSIGNMENT",
+          "assignmentSubmission": {
+            "attachments": []
+          },
+          "submissionHistory": [],
+          "courseId": "900000000101",
+          "courseWorkId": "900000000304",
+          "id": "sub-304",
+          "state": "CREATED",
+          "draftGrade": 0
+        },
+        {
+          "userId": "900000000001",
+          "late": false,
+          "courseWorkType": "ASSIGNMENT",
+          "assignmentSubmission": {
+            "attachments": []
+          },
+          "submissionHistory": [],
+          "courseId": "900000000101",
+          "courseWorkId": "900000000305",
+          "id": "sub-305",
+          "state": "RETURNED",
+          "assignedGrade": 18
+        },
+        {
+          "userId": "900000000001",
+          "late": true,
+          "courseWorkType": "ASSIGNMENT",
+          "assignmentSubmission": {
+            "attachments": []
+          },
+          "submissionHistory": [],
+          "courseId": "900000000101",
+          "courseWorkId": "900000000306",
+          "id": "sub-306",
+          "state": "TURNED_IN"
+        },
+        {
+          "userId": "900000000001",
+          "late": false,
+          "courseWorkType": "ASSIGNMENT",
+          "assignmentSubmission": {
+            "attachments": []
+          },
+          "submissionHistory": [],
+          "courseId": "900000000101",
+          "courseWorkId": "900000000310",
+          "id": "sub-310",
+          "state": "RETURNED",
+          "assignedGrade": 10
+        }
+      ],
+      "nextPageToken": ""
+    },
+    "900000000102": {
+      "studentSubmissions": [
+        {
+          "userId": "900000000001",
+          "late": false,
+          "courseWorkType": "ASSIGNMENT",
+          "assignmentSubmission": {
+            "attachments": []
+          },
+          "submissionHistory": [],
+          "courseId": "900000000102",
+          "courseWorkId": "900000000401",
+          "id": "sub-401",
+          "state": "RETURNED",
+          "assignedGrade": 18
+        },
+        {
+          "userId": "900000000001",
+          "late": false,
+          "courseWorkType": "ASSIGNMENT",
+          "assignmentSubmission": {
+            "attachments": []
+          },
+          "submissionHistory": [],
+          "courseId": "900000000102",
+          "courseWorkId": "900000000402",
+          "id": "sub-402",
+          "state": "CREATED"
+        },
+        {
+          "userId": "900000000001",
+          "late": false,
+          "courseWorkType": "ASSIGNMENT",
+          "assignmentSubmission": {
+            "attachments": []
+          },
+          "submissionHistory": [],
+          "courseId": "900000000102",
+          "courseWorkId": "900000000403",
+          "id": "sub-403",
+          "state": "TURNED_IN"
+        }
+      ],
+      "nextPageToken": ""
+    }
+  },
+  "gradingPeriodSettings": {
+    "900000000101": {
+      "gradingPeriods": [
+        {
+          "id": "gp-q1",
+          "title": "Q1",
+          "startDate": {
+            "year": 2026,
+            "month": 8,
+            "day": 18
+          },
+          "endDate": {
+            "year": 2026,
+            "month": 10,
+            "day": 16
+          }
+        },
+        {
+          "id": "gp-q2",
+          "title": "Q2",
+          "startDate": {
+            "year": 2026,
+            "month": 10,
+            "day": 19
+          },
+          "endDate": {
+            "year": 2026,
+            "month": 12,
+            "day": 18
+          }
+        }
+      ]
+    },
+    "900000000102": {
+      "gradingPeriods": [
+        {
+          "id": "gp-q1",
+          "title": "Q1",
+          "startDate": {
+            "year": 2026,
+            "month": 8,
+            "day": 18
+          },
+          "endDate": {
+            "year": 2026,
+            "month": 10,
+            "day": 16
+          }
+        },
+        {
+          "id": "gp-q2",
+          "title": "Q2",
+          "startDate": {
+            "year": 2026,
+            "month": 10,
+            "day": 19
+          },
+          "endDate": {
+            "year": 2026,
+            "month": 12,
+            "day": 18
+          }
+        }
+      ]
+    }
+  },
+  "guardians": {
+    "guardians": [
+      {
+        "studentId": "900000000001",
+        "guardianId": "900000000099",
+        "invitedEmailAddress": "guardian.a@example.invalid",
+        "guardianProfile": {
+          "id": "900000000099",
+          "name": {
+            "fullName": "Guardian A"
+          }
+        }
+      }
+    ]
+  }
+}

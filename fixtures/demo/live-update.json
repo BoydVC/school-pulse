@@ -1,0 +1,39 @@
+{
+  "fetchedAt": "{{SP:TODAY}}",
+  "students": [
+    {
+      "id": "stu-a",
+      "name": "Student A",
+      "school": "Pinecrest Middle",
+      "gradeLevel": "7"
+    }
+  ],
+  "finalGrades": [
+    {
+      "studentId": "stu-a",
+      "sectionId": "sec-math-a",
+      "courseName": "Math",
+      "teacher": "Teacher A",
+      "period": "Period 1",
+      "percent": 76,
+      "grade": "C",
+      "asOf": "{{SP:TODAY}}"
+    }
+  ],
+  "assignments": [
+    {
+      "id": "asg-field-trip",
+      "studentId": "stu-a",
+      "sectionId": "sec-math-a",
+      "courseName": "Math",
+      "teacher": "Teacher A",
+      "period": "Period 1",
+      "name": "Field trip form",
+      "dueDate": "{{SP:TODAY}}",
+      "assignDate": "{{SP:TODAY}}",
+      "category": "Homework",
+      "pointsPossible": 5,
+      "missing": true
+    }
+  ]
+}

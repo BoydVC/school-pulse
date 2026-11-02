@@ -1,0 +1,85 @@
+{
+  "fetchedAt": "2026-11-02T17:00:00.000Z",
+  "students": [
+    {
+      "userId": "stu-a",
+      "school": "Pinecrest Middle",
+      "gradeLevel": "7",
+      "profile": { "name": { "fullName": "Student A" } }
+    }
+  ],
+  "teachers": [
+    { "courseId": "course-eng-a", "profile": { "name": { "fullName": "Teacher C" } } }
+  ],
+  "courses": [
+    { "id": "course-eng-a", "name": "English", "section": "Period 3", "courseState": "ACTIVE" },
+    { "id": "course-old", "name": "Archived elective", "courseState": "ARCHIVED" }
+  ],
+  "courseWork": [
+    {
+      "courseId": "course-eng-a",
+      "id": "cw-log",
+      "title": "Reading log",
+      "workType": "ASSIGNMENT",
+      "state": "PUBLISHED",
+      "maxPoints": 10,
+      "dueDate": { "year": 2026, "month": 11, "day": 2 },
+      "dueTime": { "hours": 23, "minutes": 59 },
+      "alternateLink": "https://classroom.example.test/c/course-eng-a/a/cw-log"
+    },
+    {
+      "courseId": "course-eng-a",
+      "id": "cw-journal",
+      "title": "Response journal",
+      "workType": "ASSIGNMENT",
+      "state": "PUBLISHED",
+      "maxPoints": 15,
+      "dueDate": { "year": 2026, "month": 11, "day": 1 },
+      "dueTime": { "hours": 23, "minutes": 59 },
+      "alternateLink": "https://classroom.example.test/c/course-eng-a/a/cw-journal"
+    },
+    {
+      "courseId": "course-eng-a",
+      "id": "cw-essay",
+      "title": "Essay draft",
+      "workType": "ASSIGNMENT",
+      "state": "PUBLISHED",
+      "maxPoints": 40,
+      "dueDate": { "year": 2026, "month": 11, "day": 1 },
+      "dueTime": { "hours": 15, "minutes": 0 },
+      "alternateLink": "https://classroom.example.test/c/course-eng-a/a/cw-essay"
+    },
+    {
+      "courseId": "course-eng-a",
+      "id": "cw-quiz",
+      "title": "Vocabulary quiz",
+      "workType": "ASSIGNMENT",
+      "state": "PUBLISHED",
+      "maxPoints": 20,
+      "dueDate": { "year": 2026, "month": 10, "day": 28 },
+      "dueTime": { "hours": 23, "minutes": 59 },
+      "alternateLink": "https://classroom.example.test/c/course-eng-a/a/cw-quiz"
+    },
+    {
+      "courseId": "course-eng-a",
+      "id": "cw-syllabus",
+      "title": "Syllabus",
+      "workType": "MATERIAL",
+      "state": "PUBLISHED"
+    }
+  ],
+  "studentSubmissions": [
+    { "courseId": "course-eng-a", "courseWorkId": "cw-log", "id": "sub-log", "userId": "stu-a", "state": "CREATED", "late": false },
+    { "courseId": "course-eng-a", "courseWorkId": "cw-journal", "id": "sub-journal", "userId": "stu-a", "state": "CREATED", "late": false },
+    { "courseId": "course-eng-a", "courseWorkId": "cw-essay", "id": "sub-essay", "userId": "stu-a", "state": "TURNED_IN", "late": true },
+    {
+      "courseId": "course-eng-a",
+      "courseWorkId": "cw-quiz",
+      "id": "sub-quiz",
+      "userId": "stu-a",
+      "state": "RETURNED",
+      "late": false,
+      "assignedGrade": 18
+    }
+  ]
+}

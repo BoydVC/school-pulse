@@ -1,0 +1,45 @@
+{
+  "fetchedAt": "2026-11-02T17:00:00.000Z",
+  "student": {
+    "id": "stu-a",
+    "firstName": "Student",
+    "lastName": "A",
+    "school": "Pinecrest Middle",
+    "gradeLevel": "7"
+  },
+  "finalGrades": [
+    {
+      "studentId": "stu-a",
+      "sectionId": "sec-math-a",
+      "courseName": "Math",
+      "teacher": "Teacher A",
+      "expression": "1(A)",
+      "percent": 91,
+      "grade": "A-",
+      "asOf": "2026-11-02T16:00:00.000Z"
+    }
+  ],
+  "assignments": [
+    {
+      "id": "ASG1001",
+      "studentId": "stu-a",
+      "sectionId": "sec-math-a",
+      "name": "Problem set 12",
+      "dueDate": "2026-11-02",
+      "assignDate": "2026-10-30",
+      "category": "Homework",
+      "pointsPossible": 20,
+      "missing": false
+    },
+    {
+      "id": "ASG1002",
+      "studentId": "stu-a",
+      "sectionId": "sec-math-a",
+      "name": "Quiz 4",
+      "dueDate": "2026-10-28",
+      "category": "Quiz",
+      "score": 18,
+      "pointsPossible": 20
+    }
+  ]
+}

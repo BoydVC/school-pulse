@@ -1,0 +1,46 @@
+{
+  "schoolPulse": {
+    "school": "Pinecrest Middle",
+    "exportedAt": "2026-10-30T17:00:00Z",
+    "student": "Student A"
+  },
+  "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users('student-a')/onenote/pages",
+  "value": [
+    {
+      "id": "1-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee!1-11111111-2222-3333-4444-555555555555",
+      "self": "https://graph.microsoft.com/v1.0/me/onenote/pages/1-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee!1-11111111-2222-3333-4444-555555555555",
+      "title": "Week of November 2",
+      "createdByAppId": "school-pulse-synthetic",
+      "createdDateTime": "2026-10-30T17:00:00Z",
+      "lastModifiedDateTime": "2026-10-30T17:00:00Z",
+      "contentUrl": "https://graph.microsoft.com/v1.0/me/onenote/pages/1-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee!1-11111111-2222-3333-4444-555555555555/content",
+      "links": {
+        "oneNoteClientUrl": {
+          "href": "onenote:https://example.invalid/notebooks/science"
+        },
+        "oneNoteWebUrl": {
+          "href": "https://example.invalid/onenote/science/week"
+        }
+      },
+      "parentSection": {
+        "id": "1-section-homework",
+        "displayName": "Homework",
+        "self": "https://graph.microsoft.com/v1.0/me/onenote/sections/1-section-homework"
+      },
+      "parentNotebook": {
+        "id": "1-notebook-science",
+        "displayName": "Science",
+        "self": "https://graph.microsoft.com/v1.0/me/onenote/notebooks/1-notebook-science"
+      },
+      "parentSectionGroup": {
+        "id": "1-sg-student-a",
+        "displayName": "Student A",
+        "parentSectionGroup": {
+          "id": "1-sg-q2",
+          "displayName": "Q2"
+        }
+      },
+      "content": "<!DOCTYPE html>\n<html lang=\"en-US\">\n<head>\n<title>Week of November 2</title>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\n<meta name=\"created\" content=\"2026-10-30T17:00:00.0000000\" />\n</head>\n<body data-absolute-enabled=\"true\" style=\"font-family:Calibri;font-size:11pt\">\n<div data-id=\"div:{aaaaaaaa-1111-2222-3333-444444444444}{1}\" style=\"position:absolute\">\n<p data-id=\"p:{aaaaaaaa-1111-2222-3333-444444444444}{2}\" style=\"margin-top:0pt;margin-bottom:0pt\">Homework</p>\n<table data-id=\"table:{aaaaaaaa-1111-2222-3333-444444444444}{3}\" style=\"border:1px solid;border-collapse:collapse\">\n<tr>\n<td><p>Assignment</p></td>\n<td><p>Due</p></td>\n<td><p>Points</p></td>\n<td><p>Status</p></td>\n<td><p>Category</p></td>\n</tr>\n<tr data-id=\"tr:{aaaaaaaa-1111-2222-3333-444444444444}{10}\">\n<td><p>Microscope worksheet</p></td>\n<td><p>2026-11-05</p></td>\n<td><p>10 points</p></td>\n<td><p>Assigned</p></td>\n<td><p>Lab (40%)</p></td>\n</tr>\n<tr data-id=\"tr:{aaaaaaaa-1111-2222-3333-444444444444}{11}\">\n<td><p>Vocabulary set 4</p></td>\n<td><p>2026-11-03</p></td>\n<td><p>10/10</p></td>\n<td><p>Graded</p></td>\n<td><p>Homework</p></td>\n</tr>\n<tr data-id=\"tr:{aaaaaaaa-1111-2222-3333-444444444444}{12}\">\n<td><p>Museum reflection</p></td>\n<td><p></p></td>\n<td><p></p></td>\n<td><p>Excused</p></td>\n<td><p>Homework</p></td>\n</tr>\n<tr data-id=\"tr:{aaaaaaaa-1111-2222-3333-444444444444}{13}\">\n<td><p>Pop quiz</p></td>\n<td><p>2026-10-22</p></td>\n<td><p>0/5</p></td>\n<td><p>Dropped</p></td>\n<td><p>Quiz</p></td>\n</tr>\n<tr data-id=\"tr:{aaaaaaaa-1111-2222-3333-444444444444}{14}\">\n<td><p>Reading questions</p></td>\n<td><p></p></td>\n<td><p></p></td>\n<td><p>Assigned</p></td>\n<td><p>Homework</p></td>\n</tr>\n<tr data-id=\"tr:{aaaaaaaa-1111-2222-3333-444444444444}{15}\">\n<td><p>Field sample</p></td>\n<td><p>2026-10-27</p></td>\n<td><p>6/10</p></td>\n<td><p>Late</p></td>\n<td><p>Lab (40%)</p></td>\n</tr>\n</table>\n<p data-tag=\"to-do\" data-id=\"p:{aaaaaaaa-1111-2222-3333-444444444444}{20}\">Outline due 2026-10-20</p>\n<p data-tag=\"important, to-do\" data-id=\"p:{aaaaaaaa-1111-2222-3333-444444444444}{21}\">Graph the results. Due Friday, November 6, 2026. (15 points)</p>\n<p data-tag=\"to-do:completed\" data-id=\"p:{aaaaaaaa-1111-2222-3333-444444444444}{22}\">Lab setup checklist</p>\n</div>\n</body>\n</html>"
+    }
+  ]
+}

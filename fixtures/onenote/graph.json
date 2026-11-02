@@ -1,0 +1,18 @@
+{
+  "student": {
+    "sourceId": "stu-a",
+    "name": "Student A",
+    "school": "Pinecrest Middle",
+    "gradeLevel": "7"
+  },
+  "value": [
+    {
+      "id": "page-history-1",
+      "title": "Week of Nov 2",
+      "lastModifiedDateTime": "2026-11-02T15:00:00.000Z",
+      "parentSection": { "id": "sec-hist-a", "displayName": "History" },
+      "parentNotebook": { "displayName": "Student A" },
+      "content": "<html><body><div class=\"OutlineElement\"><p>Homework</p><ul><li>Map skills — due Friday, Nov 6</li><li>Chapter questions (due 11/3/2026)</li><li>Poster — due tomorrow</li><li>Unit quiz — due 10/28/2026 — 9/10</li></ul></div></body></html>"
+    }
+  ]
+}
