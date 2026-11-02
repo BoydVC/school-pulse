@@ -163,6 +163,7 @@ button { cursor: pointer; }
 .badge.fresh { color: var(--accent-strong); }
 .badge.aging { background: var(--late-soft); color: var(--late); border-color: transparent; }
 .badge.stale { background: var(--missing-soft); color: var(--missing); border-color: transparent; }
+.badge.reauth { background: var(--missing-soft); color: var(--missing); border-color: transparent; font-weight: 600; }
 .live-pill .dot {
   width: 8px;
   height: 8px;

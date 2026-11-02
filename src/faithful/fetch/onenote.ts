@@ -1,7 +1,10 @@
 /**
  * Read-only Microsoft Graph sync for class-notebook homework sections.
  * Delegated scope Notes.Read. Never PATCH or POST page content.
+ * A 401 refreshes once via onUnauthorized.
  */
+
+import { authorizedGet, createSession, type AuthSession } from './session.js';
 
 export interface OneNoteFetchOptions {
   token: string;
@@ -9,6 +12,7 @@ export interface OneNoteFetchOptions {
   school?: string;
   studentName?: string;
   sectionNames?: string[];
+  onUnauthorized?: () => Promise<string>;
 }
 
 interface JsonRecord {
@@ -19,22 +23,21 @@ const ROOT = 'https://graph.microsoft.com/v1.0/me/onenote';
 const DEFAULT_SECTIONS = ['homework', 'quizzes'];
 
 export async function fetchOneNoteSnapshot(options: OneNoteFetchOptions): Promise<JsonRecord> {
-  const fetchImpl = options.fetchImpl ?? fetch;
+  const session = createSession(options);
   const wanted = new Set((options.sectionNames ?? DEFAULT_SECTIONS).map((name) => name.toLowerCase()));
-  const notebooks = await getJson(fetchImpl, options.token, `${ROOT}/notebooks?$expand=sections,sectionGroups($expand=sections,sectionGroups($expand=sections))&$top=50`);
+  const notebooks = await getJson(session, `${ROOT}/notebooks?$expand=sections,sectionGroups($expand=sections,sectionGroups($expand=sections))&$top=50`);
   const sections = collectSections(notebooks.value, wanted);
   const pages: JsonRecord[] = [];
   for (const section of sections) {
     const listed = await getJson(
-      fetchImpl,
-      options.token,
+      session,
       `${ROOT}/sections/${section.id}/pages?$expand=parentSection,parentNotebook&$top=50&$orderby=createdDateTime`,
     );
     const values = Array.isArray(listed.value) ? listed.value as JsonRecord[] : [];
     for (const page of values) {
       const contentUrl = typeof page.contentUrl === 'string' ? page.contentUrl : '';
       if (!contentUrl) continue;
-      const html = await getText(fetchImpl, options.token, contentUrl);
+      const html = await getText(session, contentUrl);
       pages.push({ ...page, content: html, parentSectionGroup: section.group ?? null });
     }
   }
@@ -80,21 +83,14 @@ function takeSections(value: unknown, group: JsonRecord | null, wanted: Set<stri
   }
 }
 
-async function getJson(fetchImpl: typeof fetch, token: string, url: string): Promise<JsonRecord> {
-  assertGet(url);
-  const response = await fetchImpl(url, { method: 'GET', headers: { authorization: `Bearer ${token}`, accept: 'application/json' } });
+async function getJson(session: AuthSession, url: string): Promise<JsonRecord> {
+  const response = await authorizedGet(session, url, 'application/json', 'Graph');
   if (!response.ok) throw new Error(`Graph GET ${response.status}`);
   return (await response.json()) as JsonRecord;
 }
 
-async function getText(fetchImpl: typeof fetch, token: string, url: string): Promise<string> {
-  assertGet(url);
-  const response = await fetchImpl(url, { method: 'GET', headers: { authorization: `Bearer ${token}`, accept: 'text/html' } });
+async function getText(session: AuthSession, url: string): Promise<string> {
+  const response = await authorizedGet(session, url, 'text/html', 'Graph');
   if (!response.ok) throw new Error(`Graph GET content ${response.status}`);
   return response.text();
-}
-
-function assertGet(url: string): void {
-  const parsed = new URL(url);
-  if (parsed.protocol !== 'https:') throw new Error('Graph sync only uses https GET');
 }

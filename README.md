@@ -44,7 +44,7 @@ The household view is the product:
 - **Missing and late** sits directly underneath, with how late each item is.
 - **Grades** show the current percent, the move since the previous snapshot, and a sparkline.
 - **Just changed** is plain language: "Math went from 91 to 84", "New: Field trip form due tonight".
-- **Freshness** is a badge per source. A source with no successful import for 48 hours is marked stale. 12 hours is aging.
+- **Freshness** is a badge per source. A source with no successful import for 48 hours is marked stale. 12 hours is aging. When a saved refresh token is rejected, that badge reads **re-auth needed**.
 
 Other views: this week, missing and late, grades, the full change feed, and one page per student.
 
@@ -58,12 +58,53 @@ Portal HTML and the Classroom / Graph list payloads are parsed to match the publ
 
 ```bash
 export SCHOOL_PULSE_GOOGLE_CLIENT_ID="your-desktop-client"
-school-pulse auth classroom
+school-pulse auth classroom --student stu-a
+school-pulse auth classroom --student stu-b
 export SCHOOL_PULSE_GRAPH_CLIENT_ID="your-public-client"
-school-pulse auth onenote
+school-pulse auth onenote --student stu-a
+school-pulse auth status
+school-pulse sync
 ```
 
-Those commands bind `127.0.0.1`, open an installed-app redirect, and store the token under `data/tokens/`. PowerSchool stays a saved snapshot. `school-pulse sync` only GETs, and only when a token is already there.
+Sign in once per student. Each account is stored in the same token file, keyed by the signed-in email or id, and mapped to the `--student` id you pass. A second sign-in leaves the first account in place. `school-pulse sync` reads every saved account. Access tokens are refreshed before they expire and again if Classroom or Graph answers 401. The refresh token stays in `data/tokens/`. If a refresh is rejected, `school-pulse auth status` and the dashboard badge both say `re-auth needed` for that student. PowerSchool stays a saved snapshot.
+
+### Google Cloud desktop OAuth client
+
+Do this once. The same client id signs in every student. Use a project you control. The client id is not a secret you commit; it still stays out of this repo.
+
+1. Open [Google Cloud Console](https://console.cloud.google.com/) and create a project named `School Pulse`.
+2. Enable the Classroom API. Go to **APIs & Services → Library**, search for **Google Classroom API**, and click **Enable**. Direct link: `https://console.cloud.google.com/apis/library/classroom.googleapis.com`.
+3. Open the consent screen. The current console calls this **Google Auth Platform → Branding**. The older label is **APIs & Services → OAuth consent screen**.
+   - App name: `School Pulse`
+   - User support email: your own email
+   - Audience: **External**
+   - Leave the publishing status at **Testing**. A household does not need to submit the app for verification.
+4. Add scopes under **Google Auth Platform → Data Access** (older label: **Scopes**). Add only these:
+   - `openid`
+   - `email`
+   - `https://www.googleapis.com/auth/classroom.courses.readonly`
+   - `https://www.googleapis.com/auth/classroom.coursework.me.readonly`
+   - `https://www.googleapis.com/auth/classroom.student-submissions.me.readonly`
+   Do not add a `.students` scope or any scope that can turn in or grade work.
+5. Add test users under **Google Auth Platform → Audience**. Add each student's Google account. While the app stays in Testing, only those accounts can sign in.
+6. Create the client. **Google Auth Platform → Clients → Create client** (older path: **APIs & Services → Credentials → Create credentials → OAuth client ID**).
+   - Application type: **Desktop app**
+   - Name: `School Pulse`
+7. Copy the **Client ID**. It ends in `.apps.googleusercontent.com`. A desktop client also shows a client secret. School Pulse uses PKCE and signs in without it. Leave the secret unset unless the token endpoint asks for one. If you do set `SCHOOL_PULSE_GOOGLE_CLIENT_SECRET`, it is sent only to Google's token endpoint.
+8. Do not add a web redirect URI. A Desktop client may use `http://127.0.0.1` on whatever port is free. School Pulse binds that port when you sign in.
+9. Sign each student in from a browser that is already that student. Sign out of the previous account, or use a private window, so Google does not reuse the first session.
+
+```bash
+export SCHOOL_PULSE_GOOGLE_CLIENT_ID="YOUR_CLIENT_ID.apps.googleusercontent.com"
+school-pulse auth classroom --student stu-a
+school-pulse auth classroom --student stu-b
+school-pulse auth status
+school-pulse sync
+```
+
+Google expires refresh tokens for an app that stays in Testing after 7 days. The next sync then shows `re-auth needed` for that student. Run `school-pulse auth classroom --student <id>` again. The other students stay in the token file.
+
+The field notes for PowerSchool, Classroom, and OneNote, including the Microsoft app registration, are in [docs/ADAPTERS.md](docs/ADAPTERS.md).
 
 Demo files may contain `{{SP:TODAY}}`, `{{SP:TOMORROW}}`, `{{SP:FRIDAY}}`, `{{SP:PLUS_DAYS:2}}`, `{{SP:MINUS_DAYS:3}}`, `{{SP:MINUS_HOURS:2}}`, and `{{SP:MINUS_MIN:15}}`. Those expand when the file is read so a fixture still means "tonight" next month. Real exports will not have them.
 
@@ -141,8 +182,9 @@ Rule types:
 school-pulse demo [--port 4173] [--data ./data]
 school-pulse serve [--port 4173] [--host 127.0.0.1] [--data ./data]
 school-pulse ingest <file> [--source <name>] [--data ./data]
-school-pulse auth classroom
-school-pulse auth onenote
+school-pulse auth classroom --student <id>
+school-pulse auth onenote --student <id>
+school-pulse auth status
 school-pulse sync [--data ./data]
 ```
 
@@ -153,7 +195,7 @@ The data directory defaults to `./data`, or `SCHOOL_PULSE_DATA`. The database is
 - The only people in this repository are synthetic: Student A, Student B, Teacher A–F, Pinecrest Middle, Riverbend Elementary. Do not add real names, emails, student IDs, or school domains to code, fixtures, screenshots, or issues.
 - Real data belongs in the data directory, which is git-ignored. Set `SCHOOL_PULSE_DATA` if you want that directory outside the checkout.
 - The tool is read-only toward schools. It does not submit work, message teachers, or change a source system.
-- No credentials belong in the repo. `school-pulse auth` writes OAuth tokens into the data directory. PowerSchool passwords are never collected. Prefer a browser-saved snapshot when the school only allows an interactive login.
+- No credentials belong in the repo. `school-pulse auth` writes access tokens and refresh tokens into the data directory, one account per signed-in student. PowerSchool passwords are never collected. Prefer a browser-saved snapshot when the school only allows an interactive login.
 - The server listens on localhost. Alerts and webhooks are off until you turn a rule on.
 
 ## Development

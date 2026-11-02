@@ -2,6 +2,8 @@ import { formatWhen } from "./dates.js";
 
 export type Freshness = "fresh" | "aging" | "stale";
 
+export type SourceState = Freshness | "reauth";
+
 export const SOURCE_LABELS: Record<string, string> = {
   powerschool: "PowerSchool",
   "google-classroom": "Classroom",
@@ -28,6 +30,13 @@ export function freshnessBadge(source: string, fetchedAt: string, now: Date): { 
   const name = sourceLabel(source);
   if (state === "fresh") return { text: `${name} · ${when}`, state };
   return { text: `${name} · ${state} · ${when}`, state };
+}
+
+export function reauthBadgeText(source: string, studentIds: readonly string[]): string {
+  const name = sourceLabel(source);
+  const who = studentIds.filter((id) => id && id !== "legacy");
+  if (who.length === 0) return `${name} · re-auth needed`;
+  return `${name} · ${who.join(", ")} · re-auth needed`;
 }
 
 export function compareSources(a: string, b: string): number {

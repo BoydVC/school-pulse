@@ -1,8 +1,14 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
-import { runInstalledAppFlow, type AuthKind } from "./auth/oauth.js";
-import { fetchClassroomSnapshot } from "./faithful/fetch/classroom.js";
-import { fetchOneNoteSnapshot } from "./faithful/fetch/onenote.js";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import {
+  assertStudentId,
+  formatAuthStatus,
+  listAccountsFor,
+  signInAccount,
+  tokenFilePath,
+} from "./auth/accounts.js";
+import { syncAccounts } from "./auth/sync.js";
+import type { AuthKind } from "./auth/oauth.js";
 import { parseArgs } from "node:util";
 import { parseSnapshot, sourceFromInboxPath } from "./adapters/index.js";
 import { deliverWebhooks } from "./alerts/alerts.js";
@@ -21,6 +27,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       host: { type: "string" },
       data: { type: "string" },
       source: { type: "string" },
+      student: { type: "string" },
       help: { type: "boolean", short: "h" },
     },
     allowPositionals: true,
@@ -32,7 +39,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   }
   const dataDir = resolveDataDir(values.data);
   if (command === "auth") {
-    await runAuth(positionals[1], dataDir);
+    await runAuth(positionals[1], dataDir, values.student);
     return;
   }
   const db = openDatabase(resolve(dataDir, "school-pulse.sqlite"));
@@ -63,7 +70,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     const host = values.host ?? "127.0.0.1";
     const port = values.port ? Number(values.port) : 4173;
     if (!Number.isFinite(port)) throw new Error("Port must be a number");
-    const running = await startServer({ db, host, port });
+    const running = await startServer({ db, host, port, dataDir });
     const watcher = startWatcher({
       dataDir,
       db,
@@ -119,70 +126,43 @@ export function resolveDataDir(flag?: string): string {
 }
 
 async function runSync(dataDir: string, db: ReturnType<typeof openDatabase>): Promise<void> {
-  const config = readConfig(dataDir);
-  let wrote = false;
-  const classroomToken = readToken(dataDir, "google-classroom.json", "SCHOOL_PULSE_CLASSROOM_TOKEN");
-  if (classroomToken) {
-    const snapshot = await fetchClassroomSnapshot({ token: classroomToken, school: config.school, studentName: config.studentName });
-    wrote = writeSyncFile(dataDir, db, "google-classroom", snapshot) || wrote;
+  const result = await syncAccounts({ dataDir, db, env: process.env });
+  for (const ingested of result.ingested) printResult(ingested);
+  for (const message of result.messages) console.log(message);
+}
+
+async function runAuth(kind: string | undefined, dataDir: string, student: string | undefined): Promise<void> {
+  if (kind === "status") {
+    console.log(formatAuthStatus({
+      classroom: listAccountsFor(dataDir, "classroom"),
+      onenote: listAccountsFor(dataDir, "onenote"),
+    }));
+    return;
   }
-  const graphToken = readToken(dataDir, "microsoft-graph.json", "SCHOOL_PULSE_GRAPH_TOKEN");
-  if (graphToken) {
-    const snapshot = await fetchOneNoteSnapshot({ token: graphToken, school: config.school, studentName: config.studentName });
-    wrote = writeSyncFile(dataDir, db, "onenote", snapshot) || wrote;
-  }
-  if (!wrote) {
-    console.log("No tokens configured. Run school-pulse auth classroom or school-pulse auth onenote. PowerSchool stays a saved snapshot.");
-  }
-}
-
-function writeSyncFile(dataDir: string, db: ReturnType<typeof openDatabase>, source: string, snapshot: unknown): boolean {
-  const file = join(dataDir, "inbox", source, `sync-${Date.now()}.json`);
-  mkdirSync(join(dataDir, "inbox", source), { recursive: true });
-  const raw = JSON.stringify(snapshot);
-  writeFileSync(file, raw);
-  const now = new Date();
-  const parsed = parseSnapshot({ source, filename: file, raw, now });
-  printResult(ingestSnapshot(db, parsed, now));
-  return true;
-}
-
-function readToken(dataDir: string, file: string, envName: string): string | null {
-  const fromEnv = process.env[envName];
-  if (fromEnv) return fromEnv;
-  const path = join(dataDir, "tokens", file);
-  if (!existsSync(path)) return null;
-  const parsed = JSON.parse(readFileSync(path, "utf8")) as { access_token?: string };
-  return parsed.access_token ?? null;
-}
-
-function readConfig(dataDir: string): { school?: string; studentName?: string } {
-  const path = join(dataDir, "config.json");
-  if (!existsSync(path)) return {};
-  return JSON.parse(readFileSync(path, "utf8")) as { school?: string; studentName?: string };
-}
-
-async function runAuth(kind: string | undefined, dataDir: string): Promise<void> {
   if (kind !== "classroom" && kind !== "onenote") {
-    throw new Error("Usage: school-pulse auth classroom|onenote");
+    throw new Error("Usage: school-pulse auth classroom|onenote --student <id> | school-pulse auth status");
   }
+  const studentId = assertStudentId(student);
   const clientId = kind === "classroom" ? process.env.SCHOOL_PULSE_GOOGLE_CLIENT_ID : process.env.SCHOOL_PULSE_GRAPH_CLIENT_ID;
   if (!clientId) {
     const variable = kind === "classroom" ? "SCHOOL_PULSE_GOOGLE_CLIENT_ID" : "SCHOOL_PULSE_GRAPH_CLIENT_ID";
     throw new Error(`Set ${variable} to your installed-app client id. See docs/ADAPTERS.md.`);
   }
   const clientSecret = kind === "classroom" ? process.env.SCHOOL_PULSE_GOOGLE_CLIENT_SECRET : process.env.SCHOOL_PULSE_GRAPH_CLIENT_SECRET;
-  const tokenPath = join(dataDir, "tokens", kind === "classroom" ? "google-classroom.json" : "microsoft-graph.json");
-  console.log("Open this URL and approve read-only access. Waiting on 127.0.0.1 for the redirect.");
-  const result = await runInstalledAppFlow({
+  const storePath = tokenFilePath(dataDir, kind);
+  const label = kind === "classroom" ? "Classroom" : "OneNote";
+  console.log(`Open this URL and approve read-only access for student ${studentId}. Waiting on 127.0.0.1 for the redirect.`);
+  const account = await signInAccount({
     kind: kind as AuthKind,
     clientId,
     clientSecret: clientSecret || null,
-    tokenPath,
+    studentId,
+    storePath,
     tenant: process.env.SCHOOL_PULSE_GRAPH_TENANT,
     onAuthorizeUrl: (url) => console.log(url),
   });
-  console.log(`Stored token at ${result.path}`);
+  console.log(`Stored ${label} token for ${account.email ?? account.accountKey} (student ${account.studentId}) at ${storePath}`);
+  console.log("Other signed-in accounts in that file were left in place.");
 }
 
 function helpText(): string {
@@ -192,8 +172,9 @@ Usage
   school-pulse demo [--port 4173] [--data ./data]
   school-pulse serve [--port 4173] [--host 127.0.0.1] [--data ./data]
   school-pulse ingest <file> [--source powerschool|onenote|google-classroom|generic] [--data ./data]
-  school-pulse auth classroom
-  school-pulse auth onenote
+  school-pulse auth classroom --student <id>
+  school-pulse auth onenote --student <id>
+  school-pulse auth status
   school-pulse sync [--data ./data]
 
 The demo seeds two synthetic students and watches data/inbox/<source>/.

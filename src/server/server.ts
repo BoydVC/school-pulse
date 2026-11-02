@@ -4,6 +4,7 @@ import { basename, join } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { parseSnapshot } from "../adapters/index.js";
 import { deliverWebhooks, readAlerts, saveRules, setWebhook } from "../alerts/alerts.js";
+import { reauthNotices } from "../auth/accounts.js";
 import { buildDashboard } from "../dashboard/build.js";
 import { ingestSnapshot } from "../ingest/ingest.js";
 import type { AlertRuleType } from "../model/types.js";
@@ -25,6 +26,7 @@ export async function startServer(options: {
   host?: string;
   port?: number;
   hub?: Hub;
+  dataDir?: string;
 }): Promise<RunningServer> {
   const host = options.host ?? "127.0.0.1";
   const port = options.port ?? 4173;
@@ -49,7 +51,7 @@ export async function startServer(options: {
       return;
     }
     if (method === "GET" && url.pathname === "/api/dashboard") {
-      sendJson(res, 200, buildDashboard(options.db, new Date()));
+      sendJson(res, 200, buildDashboard(options.db, new Date(), { reauth: options.dataDir ? safeReauth(options.dataDir) : [] }));
       return;
     }
     if (method === "GET" && url.pathname === "/api/alerts") {
@@ -248,6 +250,14 @@ function parseRule(value: unknown): { id?: string; enabled: boolean; type: Alert
     threshold: rule.threshold,
     studentName: typeof rule.studentName === "string" ? rule.studentName : null,
   };
+}
+
+function safeReauth(dataDir: string): ReturnType<typeof reauthNotices> {
+  try {
+    return reauthNotices(dataDir);
+  } catch {
+    return [];
+  }
 }
 
 function badRequest(message: string, status = 400): Error {
