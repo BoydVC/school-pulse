@@ -1,4 +1,4 @@
-import type { NormalizedAssignment, NormalizedSnapshot } from "../adapters/types.js";
+import type { NormalizedAssignment, NormalizedSnapshot, RejectedRow } from "../adapters/types.js";
 import { assignmentDraft, explain, gradeValue, parseSource, type AssignmentDraft, type Source } from "./index.js";
 import { slug } from "../util/text.js";
 
@@ -10,12 +10,23 @@ export function enforceSnapshot(snapshot: NormalizedSnapshot): NormalizedSnapsho
   const source = parseSource(snapshot.source);
   if (!source.ok) throw new Error(explain(source.error));
   const householdByStudent = new Map(snapshot.students.map((student) => [student.sourceId, slug(student.name)]));
+  const rejected: RejectedRow[] = [...(snapshot.rejected ?? [])];
+  const assignments: NormalizedAssignment[] = [];
+  snapshot.assignments.forEach((assignment, index) => {
+    try {
+      assignments.push(enforceAssignment(source.value, assignment, householdByStudent.get(assignment.studentSourceId) ?? "student"));
+    } catch (error) {
+      if (source.value !== "generic") throw error;
+      const reason = error instanceof Error ? error.message : "row was rejected";
+      rejected.push({ index: assignment.rowIndex ?? index, reason });
+    }
+  });
+  rejected.sort((a, b) => a.index - b.index);
   return {
     ...snapshot,
     source: source.value,
-    assignments: snapshot.assignments.map((assignment) =>
-      enforceAssignment(source.value, assignment, householdByStudent.get(assignment.studentSourceId) ?? "student"),
-    ),
+    assignments,
+    rejected,
     grades: snapshot.grades.flatMap((grade) => {
       let letter = grade.letter;
       let percent = grade.percent;

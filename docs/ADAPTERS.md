@@ -171,7 +171,7 @@ JSON:
 }
 ```
 
-`status` is one of `assigned`, `turned_in`, `graded`, `missing`, `late`, `excused`. Anything else is an error. CSV uses the same column names. A title that contains a comma belongs in quotes.
+`status` is one of `assigned`, `turned_in`, `graded`, `missing`, `late`, `excused`. A row with any other status, or a title that fails the household rules, is skipped. The other rows are ingested. The response lists the skipped ones as `rejected: [{ "index": 1, "reason": "…" }]`, and the process logs `Rejected row 1: …`. `index` is the position in the file's `assignments` array. CSV uses the same column names. A title that contains a comma belongs in quotes.
 
 ## Idempotency and terms
 
@@ -333,7 +333,7 @@ Content-Type: application/json
 Success `200`:
 
 ```json
-{ "ok": true, "unchanged": false, "assignmentsInserted": 1, "assignmentsUpdated": 0, "gradesInserted": 0, "changes": [], "alerts": [] }
+{ "ok": true, "unchanged": false, "assignmentsInserted": 1, "assignmentsUpdated": 0, "gradesInserted": 0, "changes": [], "alerts": [], "rejected": [] }
 ```
 
 `unchanged: true` means the same rows were already stored. Parse errors are `400` `{ "ok": false, "error": "…" }`. Bodies over 5 MB are `413`. A successful change is also pushed to `GET /api/events` as a server-sent `pulse`, so the open dashboard updates without a reload.

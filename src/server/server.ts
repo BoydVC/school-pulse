@@ -98,6 +98,7 @@ export async function startServer(options: {
         gradesInserted: result.gradesInserted,
         changes: result.changes.map((change) => ({ id: change.id, summary: change.summary, kind: change.kind })),
         alerts: result.alerts.map((alert) => ({ id: alert.id, summary: alert.summary })),
+        rejected: result.rejected,
       });
       return;
     }

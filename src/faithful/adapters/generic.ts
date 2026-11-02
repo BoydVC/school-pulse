@@ -114,19 +114,28 @@ function parseJson(input: string, options?: { now?: string }): ParsedBatch {
     };
   });
   const courseByName = new Map(courses.map((course) => [course.name.toLowerCase(), course]));
-  const assignments: ParsedAssignment[] = assignmentRows.map((assignment) => {
+  const assignments: ParsedAssignment[] = [];
+  const rejected: { index: number; reason: string }[] = [];
+  assignmentRows.forEach((assignment, index) => {
     const title = collapse(assignment.title);
-    if (!title) throw new AdapterError('Generic assignment is missing a title', 'generic');
-    const status = collapse(assignment.status || 'assigned');
+    if (!title) {
+      rejected.push({ index, reason: "Generic assignment is missing a title" });
+      return;
+    }
+    const status = collapse(assignment.status || "assigned");
     if (!isAssignmentStatus(status)) {
-      throw new AdapterError(`Generic assignment "${title}" has unknown status "${status}"`, 'generic');
+      rejected.push({ index, reason: `Unknown assignment status "${status}" on ${title}` });
+      return;
     }
     const course = courseByName.get(collapse(assignment.course).toLowerCase());
-    const studentSourceId = assignment.studentSourceId || course?.studentSourceId || byName.get(collapse(assignment.student).toLowerCase()) || '';
-    if (!studentSourceId) throw new AdapterError(`Generic assignment "${title}" does not name a student`, 'generic');
+    const studentSourceId = assignment.studentSourceId || course?.studentSourceId || byName.get(collapse(assignment.student).toLowerCase()) || "";
+    if (!studentSourceId) {
+      rejected.push({ index, reason: `Generic assignment "${title}" does not name a student` });
+      return;
+    }
     const courseSourceId = assignment.courseSourceId || course?.sourceId || `generic:${slug(assignment.course || title)}`;
-    const courseName = course?.name || collapse(assignment.course) || 'Course';
-    return {
+    const courseName = course?.name || collapse(assignment.course) || "Course";
+    assignments.push({
       sourceId: assignment.sourceId || `generic:${slug(title)}`,
       studentSourceId,
       courseSourceId,
@@ -142,8 +151,9 @@ function parseJson(input: string, options?: { now?: string }): ParsedBatch {
       url: assignment.url ?? null,
       term: assignment.term ?? course?.term ?? null,
       dropped: assignment.dropped === true,
-      groupKey: `generic:${courseSourceId}:${assignment.term ?? course?.term ?? 'term'}`,
-    };
+      groupKey: `generic:${courseSourceId}:${assignment.term ?? course?.term ?? "term"}`,
+      rowIndex: index,
+    });
   });
   const grades: ParsedGrade[] = courses
     .filter((course) => course.percent !== null || course.letter)
@@ -191,6 +201,7 @@ function parseJson(input: string, options?: { now?: string }): ParsedBatch {
     grades,
     replaceGroups,
     notes: [],
+    rejected,
   };
 }
 
