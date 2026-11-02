@@ -1,0 +1,25 @@
+{
+  "name": "school-pulse",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Self-hosted live dashboard for household grades, assignments, and homework.",
+  "type": "module",
+  "bin": {
+    "school-pulse": "./bin/school-pulse"
+  },
+  "scripts": {
+    "typecheck": "tsc --strict --noEmit",
+    "test": "tsc --strict --noEmit && node --experimental-strip-types --test test/",
+    "demo": "node --disable-warning=ExperimentalWarning --experimental-strip-types src/cli.ts demo",
+    "serve": "node --disable-warning=ExperimentalWarning --experimental-strip-types src/cli.ts serve",
+    "school-pulse": "node --disable-warning=ExperimentalWarning --experimental-strip-types src/cli.ts"
+  },
+  "engines": {
+    "node": ">=22.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.1",
+    "typescript": "^5.8.3"
+  },
+  "license": "MIT"
+}
