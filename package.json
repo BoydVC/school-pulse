@@ -1,0 +1,29 @@
+{
+  "name": "school-pulse",
+  "version": "1.0.0",
+  "description": "Self-hosted live dashboard of K-12 grades, assignments, and homework. Synthetic data only in this repo.",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "school-pulse": "./bin/school-pulse.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node -e \"const fs=require('fs'); fs.cpSync('public','dist/public',{recursive:true})\"",
+    "typecheck": "tsc --noEmit --strict -p tsconfig.json",
+    "test": "tsc --noEmit --strict -p tsconfig.json && node --disable-warning=ExperimentalWarning --import tsx --test test/*.test.ts",
+    "demo": "node --disable-warning=ExperimentalWarning --import tsx src/cli.ts demo",
+    "start": "node --disable-warning=ExperimentalWarning dist/cli.js serve"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "node-html-parser": "^7.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,46 @@
+{
+  "schoolPulse": {
+    "school": "Pinecrest Middle",
+    "exportedAt": "2026-11-02T17:05:00Z",
+    "student": "Student A"
+  },
+  "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users('student-a')/onenote/pages",
+  "value": [
+    {
+      "id": "1-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee!1-99999999-2222-3333-4444-555555555555",
+      "self": "https://graph.microsoft.com/v1.0/me/onenote/pages/1-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee!1-11111111-2222-3333-4444-555555555555",
+      "title": "Science lab",
+      "createdByAppId": "school-pulse-synthetic",
+      "createdDateTime": "2026-11-02T17:05:00Z",
+      "lastModifiedDateTime": "2026-11-02T17:05:00Z",
+      "contentUrl": "https://graph.microsoft.com/v1.0/me/onenote/pages/1-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee!1-99999999-2222-3333-4444-555555555555/content",
+      "links": {
+        "oneNoteClientUrl": {
+          "href": "onenote:https://example.invalid/notebooks/science"
+        },
+        "oneNoteWebUrl": {
+          "href": "https://example.invalid/onenote/science/week"
+        }
+      },
+      "parentSection": {
+        "id": "1-section-homework",
+        "displayName": "Homework",
+        "self": "https://graph.microsoft.com/v1.0/me/onenote/sections/1-section-homework"
+      },
+      "parentNotebook": {
+        "id": "1-notebook-science",
+        "displayName": "Science",
+        "self": "https://graph.microsoft.com/v1.0/me/onenote/notebooks/1-notebook-science"
+      },
+      "parentSectionGroup": {
+        "id": "1-sg-student-a",
+        "displayName": "Student A",
+        "parentSectionGroup": {
+          "id": "1-sg-q2",
+          "displayName": "Q2"
+        }
+      },
+      "content": "<!DOCTYPE html><html><head><title>Science lab</title></head><body>\n<p data-tag=\"to-do\" data-id=\"p:{bbbbbbbb-1111-2222-3333-444444444444}{1}\">Science lab. Due Friday, November 6, 2026. (20 points)</p>\n</body></html>"
+    }
+  ]
+}

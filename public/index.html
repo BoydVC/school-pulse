@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>School Pulse</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the board</a>
+<header class="top">
+  <div class="brand">
+    <span class="pulse" id="live" title="Live"></span>
+    <div>
+      <p class="eyebrow">Household</p>
+      <h1>School Pulse</h1>
+    </div>
+  </div>
+  <div class="top-actions">
+    <p class="synthetic">Synthetic data · local only</p>
+    <button type="button" id="theme" aria-pressed="false">Light</button>
+  </div>
+</header>
+<div class="fresh" id="fresh" aria-label="Source freshness"></div>
+<nav class="tabs" id="tabs" aria-label="Views"></nav>
+<main id="main" tabindex="-1"></main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<dialog id="help">
+  <form method="dialog">
+    <h2>Keyboard</h2>
+    <ul>
+      <li><kbd>1</kbd> Overview</li>
+      <li><kbd>2</kbd> Due this week</li>
+      <li><kbd>3</kbd> Missing and late</li>
+      <li><kbd>4</kbd> Grades</li>
+      <li><kbd>5</kbd> Changes</li>
+      <li><kbd>[</kbd> <kbd>]</kbd> Switch student</li>
+      <li><kbd>t</kbd> Theme</li>
+      <li><kbd>?</kbd> This list</li>
+    </ul>
+    <button type="submit">Close</button>
+  </form>
+</dialog>
+<script src="/app.js" type="module"></script>
+</body>
+</html>
