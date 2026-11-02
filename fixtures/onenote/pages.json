@@ -1,0 +1,19 @@
+{
+  "fetchedAt": "2026-11-01T16:00:00.000Z",
+  "student": {
+    "sourceId": "on-stu-b",
+    "householdKey": "student-b",
+    "displayName": "Student B",
+    "schoolName": "Pinecrest Middle"
+  },
+  "value": [
+    {
+      "id": "on-page-spanish",
+      "title": "Spanish 8 — week of Nov 2",
+      "createdDateTime": "2026-11-01T15:00:00Z",
+      "lastModifiedDateTime": "2026-11-01T16:00:00.000Z",
+      "links": { "oneNoteWebUrl": { "href": "https://example.invalid/notes/spanish" } },
+      "content": "<article data-course=\"Spanish 8\" data-household-key=\"student-b\" data-student-id=\"on-stu-b\" data-student-name=\"Student B\" data-school=\"Pinecrest Middle\"><p>Homework: Vocabulary set 4. Due: Friday.</p></article>"
+    }
+  ]
+}

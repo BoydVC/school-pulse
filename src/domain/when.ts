@@ -92,6 +92,19 @@ export function parseDue(raw: string, now: IsoInstant): Result<IsoInstant, Domai
   return err({ kind: "bad_due", value: raw });
 }
 
+export function withinWeek(now: IsoInstant, offsetDays: number): IsoInstant {
+  if (offsetDays < 0) return addUtcDays(now, offsetDays);
+  const mondayIndex = (new Date(now).getUTCDay() + 6) % 7;
+  const daysLeft = 6 - mondayIndex;
+  return addUtcDays(now, Math.min(offsetDays, daysLeft));
+}
+
+export function weekdayOffset(now: IsoInstant, weekday: number): number {
+  const delta = (weekday - new Date(now).getUTCDay() + 7) % 7;
+  const mondayIndex = (new Date(now).getUTCDay() + 6) % 7;
+  return Math.min(delta, 6 - mondayIndex);
+}
+
 export function addUtcDays(now: IsoInstant, days: number, hour = 23, minute = 59): IsoInstant {
   const current = new Date(now);
   return instantFromDate(

@@ -1,0 +1,96 @@
+{
+  "fetchedAt": "2026-11-02T17:35:00.000Z",
+  "student": {
+    "userId": "gc-user-b",
+    "householdKey": "student-b",
+    "displayName": "Student B",
+    "schoolName": "Pinecrest Middle"
+  },
+  "courses": [
+    {
+      "id": "gc-algebra",
+      "name": "Algebra 8",
+      "section": "Period 1",
+      "courseState": "ACTIVE",
+      "alternateLink": "https://example.invalid/classroom/algebra"
+    },
+    {
+      "id": "gc-history",
+      "name": "World History 8",
+      "section": "Period 5",
+      "courseState": "ACTIVE",
+      "alternateLink": "https://example.invalid/classroom/history"
+    }
+  ],
+  "courseWork": [
+    {
+      "id": "gc-cw-problem",
+      "courseId": "gc-algebra",
+      "title": "Problem set 4",
+      "state": "PUBLISHED",
+      "dueDate": { "year": 2026, "month": 11, "day": 5 },
+      "dueTime": { "hours": 23, "minutes": 59 },
+      "maxPoints": 20,
+      "workType": "ASSIGNMENT",
+      "alternateLink": "https://example.invalid/classroom/problem"
+    },
+    {
+      "id": "gc-cw-civ",
+      "courseId": "gc-history",
+      "title": "Civilizations quiz",
+      "state": "PUBLISHED",
+      "dueDate": { "year": 2026, "month": 10, "day": 24 },
+      "maxPoints": 50,
+      "workType": "QUIZ"
+    },
+    {
+      "id": "gc-cw-docs",
+      "courseId": "gc-history",
+      "title": "Document packet",
+      "state": "PUBLISHED",
+      "dueDate": { "year": 2026, "month": 10, "day": 31 },
+      "maxPoints": 10,
+      "workType": "ASSIGNMENT"
+    }
+  ],
+  "studentSubmissions": [
+    {
+      "id": "gc-sub-problem",
+      "courseWorkId": "gc-cw-problem",
+      "courseId": "gc-algebra",
+      "userId": "gc-user-b",
+      "state": "CREATED",
+      "late": false,
+      "assignedGrade": null,
+      "updateTime": "2026-11-02T17:35:00.000Z"
+    },
+    {
+      "id": "gc-sub-civ",
+      "courseWorkId": "gc-cw-civ",
+      "courseId": "gc-history",
+      "userId": "gc-user-b",
+      "state": "RETURNED",
+      "late": false,
+      "assignedGrade": 42,
+      "updateTime": "2026-10-24T23:00:00.000Z"
+    },
+    {
+      "id": "gc-sub-docs",
+      "courseWorkId": "gc-cw-docs",
+      "courseId": "gc-history",
+      "userId": "gc-user-b",
+      "state": "CREATED",
+      "late": false,
+      "assignedGrade": null,
+      "updateTime": "2026-11-02T17:35:00.000Z"
+    }
+  ],
+  "courseGrades": [
+    {
+      "courseId": "gc-algebra",
+      "percent": 92,
+      "letter": "A-",
+      "asOf": "2026-11-02T17:35:00.000Z"
+    }
+  ]
+}

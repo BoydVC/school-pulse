@@ -74,12 +74,15 @@ export {
   parseDue,
   utcDay,
   utcWeek,
+  weekdayOffset,
   weekdayShort,
+  withinWeek,
   type WeekRange,
 } from "./when.ts";
 export type { CourseDraft, GradeDraft, SchoolSnapshot, SnapshotDocument, SnapshotFormat, StudentDraft } from "./snapshot.ts";
 export {
   describeChange,
+  parseChange,
   type Change,
   type GradeChange,
   type NewAssignmentChange,

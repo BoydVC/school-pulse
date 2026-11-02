@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>School Pulse</title>
+  <link rel="stylesheet" href="/app.css">
+  <script>
+    try {
+      var stored = localStorage.getItem("school-pulse-theme");
+      var theme = stored || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.dataset.theme = theme;
+    } catch (error) {
+      document.documentElement.dataset.theme = "light";
+    }
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="app">
+    <aside class="rail">
+      <div class="brand">
+        <span class="mark" id="mark" aria-hidden="true"></span>
+        <div>
+          <strong>School Pulse</strong>
+          <span>Household</span>
+        </div>
+      </div>
+      <nav id="nav" aria-label="Views"></nav>
+      <div id="student-links" class="student-links"></div>
+      <button type="button" id="theme" class="theme">Light</button>
+      <p class="hint"><kbd>1</kbd>–<kbd>5</kbd> views · <kbd>j</kbd><kbd>k</kbd> move · <kbd>t</kbd> theme · <kbd>?</kbd> help</p>
+    </aside>
+    <div class="stage">
+      <header class="top">
+        <div>
+          <p class="eyebrow" id="eyebrow">Household</p>
+          <h1 id="title">Overview</h1>
+        </div>
+        <div id="freshness" class="freshness" aria-label="Source freshness"></div>
+      </header>
+      <main id="main" tabindex="-1"></main>
+    </div>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <dialog id="help">
+    <h2>Keyboard</h2>
+    <ul>
+      <li><kbd>1</kbd> Overview</li>
+      <li><kbd>2</kbd> Due this week</li>
+      <li><kbd>3</kbd> Missing and late</li>
+      <li><kbd>4</kbd> Grades</li>
+      <li><kbd>5</kbd> Changes</li>
+      <li><kbd>j</kbd> / <kbd>k</kbd> Move through the list</li>
+      <li><kbd>Enter</kbd> Open the focused student</li>
+      <li><kbd>t</kbd> Toggle dark and light</li>
+      <li><kbd>?</kbd> Close this help</li>
+    </ul>
+    <form method="dialog"><button type="submit">Close</button></form>
+  </dialog>
+  <script src="/app.js"></script>
+</body>
+</html>

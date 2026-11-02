@@ -1,0 +1,5 @@
+recordType,householdKey,displayName,schoolName,sourceId,course,teacher,period,courseSourceId,title,status,earned,possible,due,assigned,category,url,percent,letter,asOf
+student,student-a,Student A,Pinecrest Middle,gen-stu-a,,,,,,,,,,,,,,,
+course,student-a,,,gen-math,Math 7,Teacher M,2,,,,,,,,,,,,,
+assignment,student-a,,,gen-practice,Math 7,,,,Practice set,assigned,,10,2026-11-03T23:59:00.000Z,,Practice,https://example.invalid/practice,,,
+grade,student-a,,,gen-math-grade,Math 7,,,,,,,,,,,,91,A-,2026-11-02T15:00:00.000Z

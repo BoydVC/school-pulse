@@ -1,0 +1,15 @@
+{
+  "classroom": {
+    "userId": "gc-user-b",
+    "sourceId": "gc-user-b",
+    "householdKey": "student-b",
+    "displayName": "Student B",
+    "schoolName": "Pinecrest Middle"
+  },
+  "onenote": {
+    "sourceId": "on-stu-b",
+    "householdKey": "student-b",
+    "displayName": "Student B",
+    "schoolName": "Pinecrest Middle"
+  }
+}

@@ -99,9 +99,9 @@ test("assignment status determines which point shapes are legal", () => {
 
 test("names and urls reject emails and non-http schemes", () => {
   assert.equal(householdKey("student-a").ok, true);
-  assert.equal(householdKey("parent@pinecrest.example").ok, false);
+  assert.equal(householdKey("parent@example.invalid").ok, false);
   assert.equal(personName("Student A", "student").ok, true);
-  assert.equal(personName("a@b.com", "student").ok, false);
+  assert.equal(personName("a@example.invalid", "student").ok, false);
   assert.equal(courseName("Math 7").ok, true);
   assert.equal(httpUrl("javascript:alert(1)").ok, false);
   assert.equal(httpUrl("https://example.invalid/course").ok, true);

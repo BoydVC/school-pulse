@@ -9,7 +9,7 @@
   },
   "scripts": {
     "typecheck": "tsc --strict --noEmit",
-    "test": "tsc --strict --noEmit && node --experimental-strip-types --test test/",
+    "test": "tsc --strict --noEmit && node --disable-warning=ExperimentalWarning --experimental-strip-types --test test/*.test.ts",
     "demo": "node --disable-warning=ExperimentalWarning --experimental-strip-types src/cli.ts demo",
     "serve": "node --disable-warning=ExperimentalWarning --experimental-strip-types src/cli.ts serve",
     "school-pulse": "node --disable-warning=ExperimentalWarning --experimental-strip-types src/cli.ts"
@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.19.1",
+    "puppeteer-core": "^24.15.0",
     "typescript": "^5.8.3"
   },
   "license": "MIT"

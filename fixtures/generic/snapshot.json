@@ -1,0 +1,43 @@
+{
+  "fetchedAt": "2026-11-02T15:00:00.000Z",
+  "students": [
+    {
+      "sourceId": "gen-stu-a",
+      "householdKey": "student-a",
+      "displayName": "Student A",
+      "schoolName": "Pinecrest Middle"
+    }
+  ],
+  "courses": [
+    {
+      "sourceId": "gen-math",
+      "householdKey": "student-a",
+      "name": "Math 7",
+      "teacher": "Teacher M",
+      "period": "2"
+    }
+  ],
+  "assignments": [
+    {
+      "sourceId": "gen-practice",
+      "householdKey": "student-a",
+      "courseName": "Math 7",
+      "title": "Practice set",
+      "status": "assigned",
+      "possible": 10,
+      "dueAt": "2026-11-03T23:59:00.000Z",
+      "category": "Practice",
+      "url": "https://example.invalid/practice"
+    }
+  ],
+  "grades": [
+    {
+      "sourceId": "gen-math-grade",
+      "householdKey": "student-a",
+      "course": "Math 7",
+      "percent": 91,
+      "letter": "A-",
+      "asOf": "2026-11-02T15:00:00.000Z"
+    }
+  ]
+}

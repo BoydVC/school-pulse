@@ -74,7 +74,7 @@ export type DomainError =
   | { readonly kind: "bad_due"; readonly value: string };
 
 const HOUSEHOLD = /^[a-z][a-z0-9-]{0,63}$/;
-const SOURCE_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,120}$/;
+const SOURCE_ID = /^[A-Za-z0-9][A-Za-z0-9._:!~-]{0,400}$/;
 const INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/;
 const PERSON = /^[\p{L}\p{N}][\p{L}\p{N} .'+-]{0,79}$/u;
 const COURSE = /^[\p{L}\p{N}][\p{L}\p{N} .'+-]{0,79}$/u;
