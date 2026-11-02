@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { parseSnapshot } from "../src/adapters/index.js";
+import { zonedParts } from "../src/time/zone.js";
 import { fixedNow, fixture } from "./helpers.js";
 
 const now = fixedNow();
@@ -13,8 +14,8 @@ test("OneNote graph page HTML becomes assignments", () => {
   const map = snapshot.assignments.find((item) => item.title === "Map skills");
   const poster = snapshot.assignments.find((item) => item.title === "Poster");
   const quiz = snapshot.assignments.find((item) => item.title === "Unit quiz");
-  assert.equal(new Date(map!.due!).getDate(), 6);
-  assert.equal(new Date(poster!.due!).getDate(), 3);
+  assert.equal(zonedParts(new Date(map!.due!)).day, 6);
+  assert.equal(zonedParts(new Date(poster!.due!)).day, 3);
   assert.equal(quiz?.status, "graded");
   assert.equal(quiz?.pointsEarned, 9);
   assert.equal(quiz?.pointsPossible, 10);

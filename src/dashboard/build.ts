@@ -11,6 +11,7 @@ import {
   startOfDay,
   startOfWeek,
 } from "../model/dates.js";
+import { activeTimezone } from "../time/zone.js";
 import { describeDueChange, describeNewAssignment, formatPercent } from "../model/english.js";
 import { compareSources, freshnessBadge, sourceLabel } from "../model/freshness.js";
 import type { Assignment, Change, Course } from "../model/types.js";
@@ -77,6 +78,7 @@ export interface ChangeItem {
 
 export interface DashboardData {
   now: string;
+  timezone: string;
   clock: { weekday: string; date: string; time: string };
   schools: string;
   tonight: {
@@ -195,7 +197,7 @@ export function buildDashboard(db: DatabaseSync, now: Date): DashboardData {
     return {
       iso: startOfDay(date).toISOString(),
       label: dayHeading(date, now),
-      dateLabel: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      dateLabel: date.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: activeTimezone() }),
       isToday: isSameDay(date, now),
       items: assignments
         .filter((assignment) => assignment.due && isSameDay(new Date(assignment.due), date) && !overdueIds.has(assignment.id))
@@ -216,9 +218,11 @@ export function buildDashboard(db: DatabaseSync, now: Date): DashboardData {
 
   const schools = [...new Set(students.map((student) => student.school).filter((school): school is string => Boolean(school)))].sort();
 
+  const timeZone = activeTimezone();
   return {
     now: now.toISOString(),
-    clock: clockParts(now),
+    timezone: timeZone,
+    clock: clockParts(now, timeZone),
     schools: schools.join(" · "),
     tonight: {
       kicker: clear ? "Tonight" : "Needs you tonight",

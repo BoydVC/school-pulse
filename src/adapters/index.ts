@@ -1,4 +1,8 @@
+import { parseSnapshot as parseFaithful } from "../faithful/adapters/index.js";
+import { AdapterError, isSource } from "../faithful/model.js";
 import { expandDemoTokens, stripBom } from "../model/tokens.js";
+import { activeTimezone } from "../time/zone.js";
+import { fromFaithful, usableFaithful } from "./bridge.js";
 import { parseClassroom } from "./classroom.js";
 import { parseGeneric } from "./generic.js";
 import { parseOneNote } from "./onenote.js";
@@ -14,6 +18,27 @@ export function parseSnapshot(input: {
   now: Date;
 }): NormalizedSnapshot {
   const raw = expandDemoTokens(stripBom(input.raw), input.now);
+  const hinted = input.source && input.source !== "auto" ? input.source : sourceFromInboxPath(input.filename);
+  try {
+    const batch = parseFaithful(raw, {
+      now: input.now.toISOString(),
+      sourceHint: hinted && isSource(hinted) ? hinted : null,
+    });
+    if (usableFaithful(batch)) return fromFaithful(batch, activeTimezone());
+  } catch (error) {
+    if (error instanceof AdapterError && /unknown status|must be an array|is not valid/i.test(error.message)) {
+      if (/unknown status/i.test(error.message)) throw new Error(`Unknown assignment status "${error.message}"`);
+      throw error;
+    }
+    if (!(error instanceof AdapterError) && !(error instanceof SyntaxError)) {
+      const message = error instanceof Error ? error.message : "Could not read snapshot";
+      throw new Error(message);
+    }
+  }
+  return parseLegacy(raw, input);
+}
+
+function parseLegacy(raw: string, input: { source?: string | null; filename: string; now: Date }): NormalizedSnapshot {
   const source = resolveSource(input.source, raw, input.filename);
   if (source === "powerschool") return parsePowerSchool(raw, input.now);
   if (source === "onenote") return parseOneNote(raw, input.now);

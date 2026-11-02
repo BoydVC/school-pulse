@@ -77,7 +77,12 @@ export async function startServer(options: {
       const rawBody = await readBody(req);
       const payload = readIngestPayload(url, req.headers["content-type"] ?? "", rawBody);
       const now = new Date();
-      const snapshot = parseSnapshot({ source: payload.source, filename: payload.filename, raw: payload.raw, now });
+      let snapshot;
+      try {
+        snapshot = parseSnapshot({ source: payload.source, filename: payload.filename, raw: payload.raw, now });
+      } catch (error) {
+        throw badRequest(error instanceof Error ? error.message : "Could not read snapshot");
+      }
       const result = ingestSnapshot(options.db, snapshot, now);
       await deliverWebhooks(options.db, result.alerts).catch((error: unknown) => {
         console.error(`school-pulse: webhook failed: ${error instanceof Error ? error.message : "unknown"}`);

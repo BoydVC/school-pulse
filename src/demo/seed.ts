@@ -1,7 +1,9 @@
 import type { DatabaseSync } from "node:sqlite";
 import { parseSnapshot } from "../adapters/index.js";
 import { ingestSnapshot } from "../ingest/ingest.js";
+import { addDays } from "../model/dates.js";
 import { listStudents } from "../store/db.js";
+import { zonedParts, zonedTimeToUtc } from "../time/zone.js";
 
 export function seedDemo(db: DatabaseSync, now: Date): void {
   if (listStudents(db).length > 0) return;
@@ -19,10 +21,8 @@ function ingestParsed(db: DatabaseSync, source: string, filename: string, body: 
 }
 
 function at(now: Date, dayOffset: number, hours = 23, minutes = 59): string {
-  const date = new Date(now);
-  date.setDate(date.getDate() + dayOffset);
-  date.setHours(hours, minutes, 0, 0);
-  return date.toISOString();
+  const parts = zonedParts(addDays(now, dayOffset));
+  return zonedTimeToUtc({ year: parts.year, month: parts.month, day: parts.day, hour: hours, minute: minutes, second: 0 }).toISOString();
 }
 
 function ago(now: Date, minutes: number): string {
@@ -30,14 +30,14 @@ function ago(now: Date, minutes: number): string {
 }
 
 function weekdayOffset(now: Date, weekday: number): number {
-  return (weekday - now.getDay() + 7) % 7;
+  return (weekday - zonedParts(now).weekday + 7) % 7;
 }
 
 function dueParts(iso: string): { dueDate: { year: number; month: number; day: number }; dueTime: { hours: number; minutes: number } } {
-  const date = new Date(iso);
+  const parts = zonedParts(new Date(iso));
   return {
-    dueDate: { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() },
-    dueTime: { hours: date.getHours(), minutes: date.getMinutes() },
+    dueDate: { year: parts.year, month: parts.month, day: parts.day },
+    dueTime: { hours: parts.hour, minutes: parts.minute },
   };
 }
 

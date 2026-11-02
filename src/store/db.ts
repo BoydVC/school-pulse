@@ -18,7 +18,7 @@ import type {
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS students (
   id TEXT PRIMARY KEY,
-  source TEXT NOT NULL,
+  source TEXT NOT NULL CHECK (source IN ('powerschool','onenote','google-classroom','generic')),
   source_id TEXT NOT NULL,
   name TEXT NOT NULL,
   school TEXT,
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS assignments (
   title TEXT NOT NULL,
   due TEXT,
   assigned TEXT,
-  status TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('assigned','turned_in','graded','missing','late','excused')),
   points_earned REAL,
   points_possible REAL,
   category TEXT,
@@ -53,7 +53,15 @@ CREATE TABLE IF NOT EXISTS assignments (
   source_id TEXT NOT NULL,
   last_seen TEXT NOT NULL,
   fetched_at TEXT NOT NULL,
-  UNIQUE(source, source_id)
+  UNIQUE(source, source_id),
+  CHECK (points_possible IS NULL OR points_possible > 0),
+  CHECK (points_earned IS NULL OR points_earned >= 0),
+  CHECK (
+    (status = 'graded' AND points_earned IS NOT NULL AND points_possible IS NOT NULL AND points_earned <= points_possible)
+    OR (status = 'missing' AND points_earned = 0)
+    OR (status = 'late' AND (points_earned IS NULL OR points_possible IS NULL OR points_earned <= points_possible))
+    OR (status IN ('assigned', 'turned_in', 'excused') AND points_earned IS NULL)
+  )
 );
 CREATE TABLE IF NOT EXISTS grade_snapshots (
   id TEXT PRIMARY KEY,
@@ -63,7 +71,10 @@ CREATE TABLE IF NOT EXISTS grade_snapshots (
   letter TEXT,
   as_of TEXT NOT NULL,
   source TEXT NOT NULL,
-  fetched_at TEXT NOT NULL
+  fetched_at TEXT NOT NULL,
+  CHECK (percent IS NULL OR (percent >= 0 AND percent <= 100)),
+  CHECK (letter IS NULL OR letter IN ('A+','A','A-','B+','B','B-','C+','C','C-','D+','D','D-','F')),
+  CHECK (percent IS NOT NULL OR letter IS NOT NULL)
 );
 CREATE TABLE IF NOT EXISTS changes (
   id TEXT PRIMARY KEY,

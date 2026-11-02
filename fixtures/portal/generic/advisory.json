@@ -1,0 +1,36 @@
+{
+  "source": "generic",
+  "fetchedAt": "2026-11-02T16:50:00Z",
+  "students": [
+    { "sourceId": "generic:student-a", "name": "Student A", "school": "Pinecrest Middle" }
+  ],
+  "courses": [
+    {
+      "sourceId": "advisory",
+      "student": "Student A",
+      "name": "Advisory",
+      "teacher": "Teacher D",
+      "period": "4(A)",
+      "term": "Q2",
+      "percent": 95,
+      "letter": "A",
+      "categories": [{ "name": "Participation", "weight": 100 }]
+    }
+  ],
+  "assignments": [
+    {
+      "sourceId": "conference-form",
+      "student": "Student A",
+      "course": "Advisory",
+      "title": "Conference form",
+      "due": "2026-11-06",
+      "assigned": "2026-11-02",
+      "status": "assigned",
+      "pointsEarned": null,
+      "pointsPossible": 5,
+      "category": "Participation",
+      "categoryWeight": 100,
+      "url": null
+    }
+  ]
+}

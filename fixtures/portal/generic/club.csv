@@ -1,0 +1,2 @@
+student,school,course,teacher,period,term,title,due,assigned,status,pointsEarned,pointsPossible,category,categoryWeight,url,sourceId,percent,letter,dropped
+Student A,Pinecrest Middle,Robotics,Teacher E,5(A),Q2,"Kickoff, build day",2026-11-06,2026-11-02,assigned,,20,Lab,100,,robotics-kickoff,88,B+,false

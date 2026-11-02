@@ -12,7 +12,7 @@ npm test
 npm run demo
 ```
 
-Open the URL it prints (http://127.0.0.1:4173). You should see Student A at Pinecrest Middle and Student B at Riverbend Elementary, with work from PowerSchool, Classroom, and OneNote.
+Open the URL it prints (http://127.0.0.1:4173). You should see Student A at Pinecrest Middle and Student B at Riverbend Elementary, with work from PowerSchool, Classroom, and OneNote. "Tonight" and "this week" use America/New_York unless you set `SCHOOL_PULSE_TZ`.
 
 ![Tonight, for the household](screenshots/household-light.png)
 
@@ -53,6 +53,17 @@ The page updates over server-sent events when an inbox file or `POST /api/ingest
 ## Adapters
 
 Put exports in `data/inbox/<source>/`. The folder name picks the parser. JSON, HTML, and CSV are watched. The same `source` + `sourceId` updates the existing row. Grade history in one file draws the sparkline without a sentence for every old point. A later file with a new percent writes one change.
+
+Portal HTML and the Classroom / Graph list payloads are parsed to match the public page and API shapes. The field notes, read-only scopes, and the loopback sign-in are in [docs/ADAPTERS.md](docs/ADAPTERS.md).
+
+```bash
+export SCHOOL_PULSE_GOOGLE_CLIENT_ID="your-desktop-client"
+school-pulse auth classroom
+export SCHOOL_PULSE_GRAPH_CLIENT_ID="your-public-client"
+school-pulse auth onenote
+```
+
+Those commands bind `127.0.0.1`, open an installed-app redirect, and store the token under `data/tokens/`. PowerSchool stays a saved snapshot. `school-pulse sync` only GETs, and only when a token is already there.
 
 Demo files may contain `{{SP:TODAY}}`, `{{SP:TOMORROW}}`, `{{SP:FRIDAY}}`, `{{SP:PLUS_DAYS:2}}`, `{{SP:MINUS_DAYS:3}}`, `{{SP:MINUS_HOURS:2}}`, and `{{SP:MINUS_MIN:15}}`. Those expand when the file is read so a fixture still means "tonight" next month. Real exports will not have them.
 
@@ -104,7 +115,7 @@ CSV columns: `student`, `student_id`, `school`, `grade_level`, `course`, `course
 
 ### Ingest API
 
-`POST /api/ingest?source=generic` with the file body, or a JSON envelope `{ "source", "filename", "body" }`. Bound to `127.0.0.1` only. `GET /api/events` is the live stream. `GET /api/dashboard` is the view model.
+Anything on the machine can push a snapshot. `POST /api/ingest?source=powerschool&filename=home.html` with the raw HTML, JSON, or CSV body. Or send `Content-Type: application/json` and `{ "source", "filename", "body" }` when the snapshot is a string inside the envelope. The server is bound to `127.0.0.1`. A repeat of the same rows returns `200` with `"unchanged": true`. A file it cannot parse returns `400`. The full contract, including the live `GET /api/events` stream, is in [docs/ADAPTERS.md](docs/ADAPTERS.md).
 
 ## Alerts
 
@@ -130,16 +141,19 @@ Rule types:
 school-pulse demo [--port 4173] [--data ./data]
 school-pulse serve [--port 4173] [--host 127.0.0.1] [--data ./data]
 school-pulse ingest <file> [--source <name>] [--data ./data]
+school-pulse auth classroom
+school-pulse auth onenote
+school-pulse sync [--data ./data]
 ```
 
-The data directory defaults to `./data`, or `SCHOOL_PULSE_DATA`. The database is `school-pulse.sqlite` inside it.
+The data directory defaults to `./data`, or `SCHOOL_PULSE_DATA`. The database is `school-pulse.sqlite` inside it. `SCHOOL_PULSE_TZ` defaults to `America/New_York`.
 
 ## Privacy
 
 - The only people in this repository are synthetic: Student A, Student B, Teacher A–F, Pinecrest Middle, Riverbend Elementary. Do not add real names, emails, student IDs, or school domains to code, fixtures, screenshots, or issues.
 - Real data belongs in the data directory, which is git-ignored. Set `SCHOOL_PULSE_DATA` if you want that directory outside the checkout.
 - The tool is read-only toward schools. It does not submit work, message teachers, or change a source system.
-- No credentials belong in the repo. Pass tokens through environment variables or files in the data directory, and prefer a browser-saved snapshot when the school only allows an interactive login.
+- No credentials belong in the repo. `school-pulse auth` writes OAuth tokens into the data directory. PowerSchool passwords are never collected. Prefer a browser-saved snapshot when the school only allows an interactive login.
 - The server listens on localhost. Alerts and webhooks are off until you turn a rule on.
 
 ## Development

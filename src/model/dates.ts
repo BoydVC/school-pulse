@@ -1,31 +1,42 @@
-export function startOfDay(date: Date): Date {
-  const next = new Date(date);
-  next.setHours(0, 0, 0, 0);
-  return next;
+import { activeTimezone, endOfCivilDate, zonedParts, zonedTimeToUtc } from "../time/zone.js";
+
+export function startOfDay(date: Date, timeZone = activeTimezone()): Date {
+  const parts = zonedParts(date, timeZone);
+  return zonedTimeToUtc({ year: parts.year, month: parts.month, day: parts.day, hour: 0, minute: 0, second: 0 }, timeZone);
 }
 
-export function endOfDay(date: Date): Date {
-  const next = new Date(date);
-  next.setHours(23, 59, 0, 0);
-  return next;
+export function endOfDay(date: Date, timeZone = activeTimezone()): Date {
+  const parts = zonedParts(date, timeZone);
+  return zonedTimeToUtc({ year: parts.year, month: parts.month, day: parts.day, hour: 23, minute: 59, second: 0 }, timeZone);
 }
 
-export function addDays(date: Date, days: number): Date {
-  const next = new Date(date);
-  next.setDate(next.getDate() + days);
-  return next;
+export function addDays(date: Date, days: number, timeZone = activeTimezone()): Date {
+  const parts = zonedParts(date, timeZone);
+  const shifted = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + days));
+  return zonedTimeToUtc(
+    {
+      year: shifted.getUTCFullYear(),
+      month: shifted.getUTCMonth() + 1,
+      day: shifted.getUTCDate(),
+      hour: parts.hour,
+      minute: parts.minute,
+      second: parts.second,
+    },
+    timeZone,
+  );
 }
 
-export function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+export function isSameDay(a: Date, b: Date, timeZone = activeTimezone()): boolean {
+  const left = zonedParts(a, timeZone);
+  const right = zonedParts(b, timeZone);
+  return left.year === right.year && left.month === right.month && left.day === right.day;
 }
 
-export function startOfWeek(date: Date): Date {
-  const next = startOfDay(date);
-  const day = next.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  next.setDate(next.getDate() + diff);
-  return next;
+export function startOfWeek(date: Date, timeZone = activeTimezone()): Date {
+  const start = startOfDay(date, timeZone);
+  const weekday = zonedParts(start, timeZone).weekday;
+  const diff = weekday === 0 ? -6 : 1 - weekday;
+  return addDays(start, diff, timeZone);
 }
 
 const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
@@ -57,36 +68,28 @@ const MONTHS: Record<string, number> = {
   december: 11,
 };
 
-export function parseLooseDate(input: string, now: Date): Date | null {
+export function parseLooseDate(input: string, now: Date, timeZone = activeTimezone()): Date | null {
   const text = input.trim().replace(/[.,]+$/g, "");
   if (!text) return null;
   const lower = text.toLowerCase();
-  if (lower === "today" || lower === "tonight") return endOfDay(now);
-  if (lower === "tomorrow") return endOfDay(addDays(now, 1));
-  if (lower === "yesterday") return endOfDay(addDays(now, -1));
+  if (lower === "today" || lower === "tonight") return endOfDay(now, timeZone);
+  if (lower === "tomorrow") return endOfDay(addDays(now, 1, timeZone), timeZone);
+  if (lower === "yesterday") return endOfDay(addDays(now, -1, timeZone), timeZone);
 
   const weekday = WEEKDAYS.indexOf(lower);
   if (weekday >= 0) {
-    const next = startOfDay(now);
-    const delta = (weekday - next.getDay() + 7) % 7;
-    next.setDate(next.getDate() + delta);
-    return endOfDay(next);
+    const today = zonedParts(now, timeZone).weekday;
+    const delta = (weekday - today + 7) % 7;
+    return endOfDay(addDays(now, delta, timeZone), timeZone);
   }
 
   const prefixed = lower.match(/^(sunday|monday|tuesday|wednesday|thursday|friday|saturday),?\s+(.+)$/);
   if (prefixed?.[2]) {
-    const rest = parseLooseDate(prefixed[2], now);
+    const rest = parseLooseDate(prefixed[2], now, timeZone);
     if (rest) return rest;
   }
 
-  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
-    const parts = text.split("-").map(Number);
-    const year = parts[0];
-    const month = parts[1];
-    const day = parts[2];
-    if (!year || !month || !day) return null;
-    return endOfDay(new Date(year, month - 1, day));
-  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return endOfCivilDate(text, timeZone);
 
   if (/^\d{4}-\d{2}-\d{2}t/i.test(text)) {
     const parsed = Date.parse(text);
@@ -99,48 +102,50 @@ export function parseLooseDate(input: string, now: Date): Date | null {
     const day = Number(slash[2]);
     let year = Number(slash[3]);
     if (year < 100) year += 2000;
-    return endOfDay(new Date(year, month - 1, day));
+    return endOfCivilDate(`${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`, timeZone);
   }
 
   const named = lower.match(/^([a-z]+)\.?\s+(\d{1,2})(?:,?\s+(\d{4}))?$/);
   if (named?.[1] && named[2] && MONTHS[named[1]] !== undefined) {
-    const year = named[3] ? Number(named[3]) : now.getFullYear();
-    return endOfDay(new Date(year, MONTHS[named[1]]!, Number(named[2])));
+    const year = named[3] ? Number(named[3]) : zonedParts(now, timeZone).year;
+    const month = MONTHS[named[1]]! + 1;
+    const day = Number(named[2]);
+    return endOfCivilDate(`${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`, timeZone);
   }
 
   return null;
 }
 
-export function formatDuePhrase(dueIso: string | null, now: Date): string | null {
+export function formatDuePhrase(dueIso: string | null, now: Date, timeZone = activeTimezone()): string | null {
   if (!dueIso) return null;
   const due = new Date(dueIso);
   if (Number.isNaN(due.getTime())) return null;
-  if (isSameDay(due, now)) return "tonight";
-  if (isSameDay(due, addDays(now, 1))) return "tomorrow";
-  const horizon = endOfDay(addDays(now, 6)).getTime();
-  if (due.getTime() >= startOfDay(now).getTime() && due.getTime() <= horizon) {
-    return due.toLocaleDateString("en-US", { weekday: "short" });
+  if (isSameDay(due, now, timeZone)) return "tonight";
+  if (isSameDay(due, addDays(now, 1, timeZone), timeZone)) return "tomorrow";
+  const horizon = endOfDay(addDays(now, 6, timeZone), timeZone).getTime();
+  if (due.getTime() >= startOfDay(now, timeZone).getTime() && due.getTime() <= horizon) {
+    return due.toLocaleDateString("en-US", { weekday: "short", timeZone });
   }
-  return due.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return due.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone });
 }
 
-export function daysLate(dueIso: string, now: Date): number {
-  const due = startOfDay(new Date(dueIso)).getTime();
-  const today = startOfDay(now).getTime();
+export function daysLate(dueIso: string, now: Date, timeZone = activeTimezone()): number {
+  const due = startOfDay(new Date(dueIso), timeZone).getTime();
+  const today = startOfDay(now, timeZone).getTime();
   return Math.max(0, Math.round((today - due) / 86_400_000));
 }
 
-export function formatDueLabel(dueIso: string | null, status: string, now: Date): string {
+export function formatDueLabel(dueIso: string | null, status: string, now: Date, timeZone = activeTimezone()): string {
   if (!dueIso) return "No due date";
   const due = new Date(dueIso);
   if (Number.isNaN(due.getTime())) return "No due date";
   if (status === "missing" || status === "late") {
-    if (isSameDay(due, now)) return "Due tonight";
-    const days = daysLate(dueIso, now);
+    if (isSameDay(due, now, timeZone)) return "Due tonight";
+    const days = daysLate(dueIso, now, timeZone);
     if (days <= 1) return "1 day late";
     return `${days} days late`;
   }
-  const phrase = formatDuePhrase(dueIso, now);
+  const phrase = formatDuePhrase(dueIso, now, timeZone);
   if (phrase === "tonight") return "Due tonight";
   if (phrase === "tomorrow") return "Due tomorrow";
   if (phrase) return `Due ${phrase}`;
@@ -159,16 +164,16 @@ export function formatWhen(iso: string, now: Date): string {
   return `${days}d ago`;
 }
 
-export function dayHeading(date: Date, now: Date): string {
-  if (isSameDay(date, now)) return "Today";
-  if (isSameDay(date, addDays(now, 1))) return "Tomorrow";
-  return date.toLocaleDateString("en-US", { weekday: "long" });
+export function dayHeading(date: Date, now: Date, timeZone = activeTimezone()): string {
+  if (isSameDay(date, now, timeZone)) return "Today";
+  if (isSameDay(date, addDays(now, 1, timeZone), timeZone)) return "Tomorrow";
+  return date.toLocaleDateString("en-US", { weekday: "long", timeZone });
 }
 
-export function clockParts(now: Date): { weekday: string; date: string; time: string } {
+export function clockParts(now: Date, timeZone = activeTimezone()): { weekday: string; date: string; time: string } {
   return {
-    weekday: now.toLocaleDateString("en-US", { weekday: "long" }),
-    date: now.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    time: now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+    weekday: now.toLocaleDateString("en-US", { weekday: "long", timeZone }),
+    date: now.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone }),
+    time: now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone }),
   };
 }

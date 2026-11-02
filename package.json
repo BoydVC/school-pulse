@@ -12,13 +12,14 @@
     "typecheck": "tsc --strict --noEmit --pretty false && tsc -p tsconfig.web.json --strict --noEmit --pretty false",
     "test": "npm run build && node --disable-warning=ExperimentalWarning --test --test-reporter spec dist/tests/*.test.js",
     "demo": "node --disable-warning=ExperimentalWarning dist/src/cli.js demo",
+    "ingest": "node --disable-warning=ExperimentalWarning dist/src/cli.js ingest",
     "start": "node --disable-warning=ExperimentalWarning dist/src/cli.js serve"
   },
   "engines": {
     "node": ">=22.13"
   },
   "dependencies": {
-    "node-html-parser": "6.1.13"
+    "node-html-parser": "^7.0.1"
   },
   "devDependencies": {
     "@types/node": "22.18.12",

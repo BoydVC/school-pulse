@@ -47,6 +47,7 @@ interface ChangeItem {
 }
 
 interface Dashboard {
+  timezone: string;
   clock: { weekday: string; date: string; time: string };
   schools: string;
   tonight: {
@@ -213,7 +214,7 @@ function renderHeader(board: Dashboard, current: Route): string {
       <svg class="mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><circle cx="16" cy="16" r="5.5" fill="currentColor"></circle><circle cx="16" cy="16" r="11" fill="none" stroke="currentColor" stroke-width="2" opacity="0.45"></circle></svg>
       <div>
         <h1 class="word">School Pulse</h1>
-        <div class="clock"><span>${esc(board.clock.weekday)} ${esc(board.clock.date)}</span> · <span data-clock>${esc(board.clock.time)}</span></div>
+        <div class="clock"><span>${esc(board.clock.weekday)} ${esc(board.clock.date)}</span> · <span data-clock data-timezone="${esc(board.timezone)}">${esc(board.clock.time)}</span></div>
         ${board.schools ? `<div class="schools">${esc(board.schools)}</div>` : ""}
       </div>
     </div>
@@ -491,7 +492,9 @@ function toggleTheme(): void {
 
 function tickClock(): void {
   const node = document.querySelector("[data-clock]");
-  if (node) node.textContent = new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  if (!node) return;
+  const timeZone = node.getAttribute("data-timezone") || "America/New_York";
+  node.textContent = new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone });
 }
 
 function move(delta: number): void {

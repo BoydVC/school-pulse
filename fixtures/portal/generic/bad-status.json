@@ -1,0 +1,6 @@
+{
+  "fetchedAt": "2026-11-02T16:50:00Z",
+  "students": [{ "name": "Student A", "school": "Pinecrest Middle" }],
+  "courses": [{ "name": "Advisory", "student": "Student A" }],
+  "assignments": [{ "title": "Mystery", "student": "Student A", "course": "Advisory", "status": "vanished" }]
+}

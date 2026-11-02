@@ -1,5 +1,6 @@
 import type { DatabaseSync } from "node:sqlite";
 import type { NormalizedAssignment, NormalizedGrade, NormalizedSnapshot } from "../adapters/types.js";
+import { enforceSnapshot } from "../domain/enforce.js";
 import { formatDuePhrase } from "../model/dates.js";
 import {
   describeDueChange,
@@ -59,7 +60,8 @@ export function ingestSnapshot(db: DatabaseSync, snapshot: NormalizedSnapshot, n
   return transaction(db, () => applySnapshot(db, snapshot, now));
 }
 
-function applySnapshot(db: DatabaseSync, snapshot: NormalizedSnapshot, now: Date): IngestResult {
+function applySnapshot(db: DatabaseSync, incoming: NormalizedSnapshot, now: Date): IngestResult {
+  const snapshot = enforceSnapshot(incoming);
   const fetchedAt = snapshot.fetchedAt || now.toISOString();
   const existingAssignments = countAssignmentsBySource(db, snapshot.source);
   const result: IngestResult = {
