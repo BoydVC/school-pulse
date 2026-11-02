@@ -1,0 +1,3 @@
+student,student_id,school,grade_level,course,course_id,teacher,period,title,assignment_id,due,assigned,status,points_earned,points_possible,category,url,percent,letter,as_of
+Student B,stu-b,Riverbend Elementary,5,Reading,read-b,Teacher F,Period 2,Response journal,csv-1,2026-10-31,2026-10-28,missing,,15,Homework,,78,C+,2026-11-01T16:00:00.000Z
+Student B,stu-b,Riverbend Elementary,5,Reading,read-b,Teacher F,Period 2,"Book talk, draft",csv-2,2026-11-04,2026-11-01,assigned,,20,Homework,,,

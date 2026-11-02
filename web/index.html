@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>School Pulse</title>
+    <link rel="preload" href="/fonts/fraunces-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/outfit-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/styles.css" />
+    <script>
+      (function () {
+        var stored = localStorage.getItem("school-pulse-theme");
+        var theme = stored || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#tonight">Skip to tonight</a>
+    <div id="toast" class="toast" hidden role="status"></div>
+    <div id="app">
+      <header class="top">
+        <div class="brand">
+          <h1>School Pulse</h1>
+        </div>
+      </header>
+      <section class="tonight" id="tonight">
+        <p class="kicker">Tonight</p>
+        <h2>Loading the household…</h2>
+      </section>
+    </div>
+    <dialog id="help">
+      <form method="dialog">
+        <h2>Keyboard</h2>
+        <p>The household view is the home screen. These shortcuts work from anywhere.</p>
+        <dl>
+          <div><dt>H</dt><dd>Tonight, the household</dd></div>
+          <div><dt>W</dt><dd>Due this week</dd></div>
+          <div><dt>M</dt><dd>Missing and late</dd></div>
+          <div><dt>G</dt><dd>Grades</dd></div>
+          <div><dt>C</dt><dd>Change feed</dd></div>
+          <div><dt>J / K</dt><dd>Move down and up</dd></div>
+          <div><dt>Enter</dt><dd>Open the focused student</dd></div>
+          <div><dt>Esc</dt><dd>Back to the household</dd></div>
+          <div><dt>T</dt><dd>Light or dark</dd></div>
+          <div><dt>?</dt><dd>This help</dd></div>
+        </dl>
+        <button value="cancel" class="close">Close</button>
+      </form>
+    </dialog>
+    <p id="live" class="sr-only" aria-live="polite"></p>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
