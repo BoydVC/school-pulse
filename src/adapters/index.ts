@@ -18,6 +18,9 @@ export function parseSnapshot(input: {
   now: Date;
 }): NormalizedSnapshot {
   const raw = expandDemoTokens(stripBom(input.raw), input.now);
+  if (isHtmlFragment(raw)) {
+    throw new Error("HTML fragment is not a saved school page");
+  }
   const hinted = input.source && input.source !== "auto" ? input.source : sourceFromInboxPath(input.filename);
   try {
     const batch = parseFaithful(raw, {
@@ -26,6 +29,9 @@ export function parseSnapshot(input: {
     });
     if (usableFaithful(batch)) return fromFaithful(batch, activeTimezone());
   } catch (error) {
+    if (error instanceof AdapterError && /missing the section frn/i.test(error.message) && !/frn=/i.test(raw)) {
+      throw new Error("PowerSchool scores page is missing the section frn");
+    }
     if (error instanceof AdapterError && /unknown status|must be an array|is not valid/i.test(error.message)) {
       if (/unknown status/i.test(error.message)) throw new Error(`Unknown assignment status "${error.message}"`);
       throw error;
@@ -35,7 +41,23 @@ export function parseSnapshot(input: {
       throw new Error(message);
     }
   }
-  return parseLegacy(raw, input);
+  const legacy = parseLegacy(raw, input);
+  if (looksLikeHtml(raw) && legacy.students.length + legacy.courses.length + legacy.assignments.length + legacy.grades.length === 0) {
+    throw new Error("HTML fragment is not a saved school page");
+  }
+  return legacy;
+}
+
+function looksLikeHtml(raw: string): boolean {
+  return /^\s*</.test(raw);
+}
+
+function isHtmlFragment(raw: string): boolean {
+  const text = raw.trim();
+  if (!looksLikeHtml(text)) return false;
+  if (/<html|<body|<!doctype|<head/i.test(text)) return false;
+  if (/frn=|studname|account-name|school-pulse-student|data-tag=/i.test(text)) return false;
+  return true;
 }
 
 function parseLegacy(raw: string, input: { source?: string | null; filename: string; now: Date }): NormalizedSnapshot {

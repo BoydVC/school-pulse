@@ -71,7 +71,7 @@ interface StudentSubmission {
   state?: string;
   late?: boolean;
   draftGrade?: number;
-  assignedGrade?: number;
+  assignedGrade?: number | null;
   alternateLink?: string;
   courseWorkType?: string;
 }
@@ -109,7 +109,7 @@ const SKIP_WORK = new Set(['DRAFT', 'DELETED', 'COURSE_WORK_STATE_UNSPECIFIED'])
 /**
  * Parse courses.list, courseWork.list, and studentSubmissions.list payloads.
  * `draftGrade` is teacher-only; overall percent is computed locally because
- * the API does not return it. Excused is not a field on StudentSubmission.
+ * the API does not return it. Excused is inferred only when assignedGrade is JSON null.
  */
 export function parseClassroom(input: string | ClassroomSnapshot, options?: { now?: string }): ParsedBatch {
   const snapshot: ClassroomSnapshot = typeof input === 'string' ? (JSON.parse(input) as ClassroomSnapshot) : input;
@@ -121,9 +121,7 @@ export function parseClassroom(input: string | ClassroomSnapshot, options?: { no
   }
   const courses = flattenNamed(snapshot.courses, 'courses').filter((course) => ACTIVE.has(course.courseState ?? 'ACTIVE') || course.courseState === undefined);
   const active = courses.filter((course) => course.courseState === 'ACTIVE' || course.courseState === undefined);
-  const notes: string[] = [
-    'Classroom StudentSubmission has no excused field. Returned work with no assignedGrade is not treated as excused (it is indistinguishable from "complete").',
-  ];
+  const notes: string[] = [];
   if (snapshot.guardians?.guardians?.length) {
     notes.push('userProfiles.guardians is a link list, not a grade source. Guardian profiles were ignored.');
   }
@@ -157,20 +155,24 @@ export function parseClassroom(input: string | ClassroomSnapshot, options?: { no
       const groupKey = `gc:${course.id}:${periodId || 'none'}`;
       if (!replaceGroups.includes(groupKey)) replaceGroups.push(groupKey);
       const category = resolveCategory(work.gradeCategory, categories);
-      courseAssignments.push(
-        toAssignment({
-          work,
-          submission,
-          courseId: course.id,
-          courseName: course.name,
-          studentSourceId: student.userId,
-          term,
-          category,
-          dropped,
-          now,
-          groupKey,
-        }),
-      );
+      const assignment = toAssignment({
+        work,
+        submission,
+        courseId: course.id,
+        courseName: course.name,
+        studentSourceId: student.userId,
+        term,
+        category,
+        dropped,
+        now,
+        groupKey,
+      });
+      if (assignment.excusedUnknown) {
+        notes.push(
+          `Excused state unknown for "${assignment.title}": RETURNED with no assignedGrade. Classroom does not say whether the teacher excused it.`,
+        );
+      }
+      courseAssignments.push(assignment);
     }
     const visible = course.gradebookSettings?.displaySetting ?? 'SHOW_OVERALL_GRADE';
     const hideOverall = visible === 'HIDE_OVERALL_GRADE';
@@ -322,16 +324,22 @@ function toAssignment(input: {
   const late = input.submission?.late === true;
   const turnedIn = state === 'TURNED_IN' || state === 'RETURNED' || state === 'STUDENT_EDITED_AFTER_TURN_IN';
   const pastDue = due !== null && due < civilDateFromIso(input.now, activeTimezone());
+  const gradePresent = input.submission != null && Object.prototype.hasOwnProperty.call(input.submission, 'assignedGrade');
+  const assignedGrade = input.submission?.assignedGrade;
   let status: AssignmentStatus;
-  if (turnedIn && late) status = 'late';
-  else if (turnedIn && input.submission?.assignedGrade !== undefined && state === 'RETURNED') status = 'graded';
-  else if (turnedIn) status = 'turned_in';
-  else if (!input.dropped && pastDue && (state === 'NEW' || state === 'CREATED' || state === 'RECLAIMED_BY_STUDENT')) status = 'missing';
+  let excusedUnknown = false;
+  if (state === 'RETURNED' && gradePresent && assignedGrade == null) status = 'excused';
+  else if (turnedIn && late) status = 'late';
+  else if (turnedIn && typeof assignedGrade === 'number' && state === 'RETURNED') status = 'graded';
+  else if (turnedIn) {
+    status = 'turned_in';
+    excusedUnknown = state === 'RETURNED' && !gradePresent;
+  } else if (!input.dropped && pastDue && (state === 'NEW' || state === 'CREATED' || state === 'RECLAIMED_BY_STUDENT')) status = 'missing';
   else status = 'assigned';
 
   let pointsEarned: number | null = null;
-  if (input.submission?.assignedGrade !== undefined && (status === 'graded' || status === 'late')) {
-    pointsEarned = input.submission.assignedGrade;
+  if (typeof assignedGrade === 'number' && (status === 'graded' || status === 'late')) {
+    pointsEarned = assignedGrade;
   } else if (status === 'missing') {
     pointsEarned = input.submission?.draftGrade ?? 0;
   }
@@ -353,6 +361,7 @@ function toAssignment(input: {
     term: input.term,
     dropped: input.dropped,
     groupKey: input.groupKey,
+    excusedUnknown,
   };
 }
 

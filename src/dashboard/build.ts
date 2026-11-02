@@ -104,7 +104,7 @@ export interface DashboardData {
 export function buildDashboard(db: DatabaseSync, now: Date): DashboardData {
   const students = listStudents(db);
   const courses = listCourses(db);
-  const assignments = listAssignments(db);
+  const assignments = listAssignments(db).filter((assignment) => !assignment.removed);
   const grades = listGrades(db);
   const changes = listChanges(db);
   const studentById = new Map(students.map((student) => [student.id, student]));

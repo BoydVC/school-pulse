@@ -44,7 +44,8 @@ test("the local API serves the household, ingest, and alerts", async () => {
       }),
     }).then((response) => response.json())) as { ok: boolean; changes: Array<{ summary: string }> };
     assert.equal(ingest.ok, true);
-    assert.match(ingest.changes[0]?.summary ?? "", /New: Sketch/);
+    assert.equal(ingest.changes[0]?.summary, "baseline loaded");
+    assert.equal(ingest.changes.some((change) => change.summary.includes("Sketch")), false);
   } finally {
     await server.close();
   }
@@ -61,7 +62,7 @@ test("sse announces an ingest", async () => {
     const decoder = new TextDecoder();
     let buffer = "";
     const pending = (async () => {
-      while (!buffer.includes("Sketch")) {
+      while (!buffer.includes("baseline loaded")) {
         const chunk = await reader.read();
         if (chunk.done) break;
         buffer += decoder.decode(chunk.value);
@@ -82,7 +83,7 @@ test("sse announces an ingest", async () => {
       new Promise<string>((_, reject) => setTimeout(() => reject(new Error("sse timed out")), 4000)),
     ]);
     assert.match(text, /event: pulse/);
-    assert.match(text, /Sketch/);
+    assert.match(text, /baseline loaded/);
   } finally {
     controller.abort();
     await server.close();

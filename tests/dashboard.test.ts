@@ -29,10 +29,12 @@ test("demo household is two students, three sources, and at least twelve assignm
   assert.equal(board.sources.find((source) => source.source === "powerschool")?.state, "fresh");
   assert.equal(board.tonight.headline.join(" · "), "2 missing · 1 late · 3 due tonight");
   assert.match(board.tonight.detail, /Oldest is Lab report/);
+  const summaries = board.changes.map((change) => change.summary);
   assert.deepEqual(
-    board.changes.map((change) => change.summary),
+    summaries.filter((summary) => summary !== "baseline loaded"),
     ["Math went from 91 to 84", "Lab report marked missing", "Essay draft turned in"],
   );
+  assert.equal(summaries.filter((summary) => summary === "baseline loaded").length, 3);
   const math = board.grades.find((grade) => grade.studentName === "Student A" && grade.courseName === "Math");
   const english = board.grades.find((grade) => grade.studentName === "Student A" && grade.courseName === "English");
   assert.equal(math?.percentLabel, "84");

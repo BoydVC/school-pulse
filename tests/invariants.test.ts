@@ -77,8 +77,10 @@ test("ingest coerces a missing row to zero earned and keeps the re-ingest quiet"
     fetchedAt: raw.fetchedAt,
     students: [{ sourceId: "stu-a", name: "Student A", school: "Pinecrest Middle", gradeLevel: null }],
     courses: [{ sourceId: "math", studentSourceId: "stu-a", name: "Math", teacher: null, period: null }],
-    assignments: [{ sourceId: "lab", studentSourceId: "stu-a", courseSourceId: "math", title: "Lab report", due: null, assigned: null, status: "missing", pointsEarned: null, pointsPossible: 25, category: null, url: null }],
+    assignments: [{ sourceId: "lab", studentSourceId: "stu-a", courseSourceId: "math", title: "Lab report", due: null, assigned: null, status: "missing", pointsEarned: null, pointsPossible: 25, category: null, url: null, groupKey: null }],
     grades: [{ studentSourceId: "stu-a", courseSourceId: "math", percent: 91, letter: "A-", asOf: "2026-11-02T22:30:00.000Z" }],
+    replaceGroups: [],
+    notes: [],
   });
   assert.equal(snapshot.assignments[0]?.pointsEarned, 0);
   const now = new Date("2026-11-02T22:30:00.000Z");

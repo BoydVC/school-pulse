@@ -88,6 +88,7 @@ export function parseClassroom(raw: string, now: Date): NormalizedSnapshot {
       pointsPossible: asNumber(work.maxPoints),
       category: asString(work.workType) ?? "Assignment",
       url: asString(submission.alternateLink ?? work.alternateLink),
+      groupKey: null,
     });
   }
 
@@ -114,6 +115,7 @@ export function parseClassroom(raw: string, now: Date): NormalizedSnapshot {
         pointsPossible: asNumber(work.maxPoints),
         category: asString(work.workType) ?? "Assignment",
         url: asString(work.alternateLink),
+        groupKey: null,
       });
     }
   }

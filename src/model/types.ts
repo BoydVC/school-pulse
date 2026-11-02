@@ -21,7 +21,9 @@ export type ChangeKind =
   | "assignment_status"
   | "assignment_score"
   | "assignment_due"
-  | "assignment_moved";
+  | "assignment_moved"
+  | "assignment_removed"
+  | "baseline";
 
 export interface Student {
   id: string;
@@ -60,6 +62,8 @@ export interface Assignment {
   sourceId: string;
   lastSeen: string;
   fetchedAt: string;
+  groupKey: string | null;
+  removed: boolean;
 }
 
 export interface GradeSnapshot {

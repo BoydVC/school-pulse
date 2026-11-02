@@ -79,6 +79,7 @@ function parsePowerSchoolJson(data: LooseRecord, now: Date): NormalizedSnapshot 
       pointsPossible: asNumber(item.pointsPossible ?? item.maxPoints),
       category: asString(item.category),
       url: asString(item.url ?? item.href),
+      groupKey: null,
     });
   }
 
@@ -219,6 +220,7 @@ function readAssignmentTable(
       pointsPossible: score.possible,
       category: cleanText(cells[categoryIdx]?.text ?? "") || null,
       url: href || null,
+      groupKey: null,
     });
   });
 }

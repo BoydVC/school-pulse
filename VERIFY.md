@@ -78,10 +78,13 @@ types-first would have been the stricter core, and adapters-first the better par
 
 ## Bugs left open
 
-- A later OneNote page does not drop assignments that disappeared from that page. The faithful parser computes replace groups; the dashboard store does not apply them.
-- If a saved PowerSchool page is missing the section `frn`, the faithful parser refuses it and the older parser may still invent a student from the page title.
-- A PowerSchool HTML fragment can still ingest as an empty snapshot through that fallback.
-- Classroom has no excused flag in `studentSubmissions`, so excused work stays turned in. That matches the adapters-first note and is intentional.
-- `missing_above` alert text still formats the count threshold like a percent.
-- The first small import can still narrate every new assignment. A file with more than three new rows stays quiet. types-first suppressed the whole baseline.
-- OAuth still needs a desktop client id in the environment. This repo does not ship one, and it should not.
+OAuth still needs a desktop client id in the environment. This repo does not ship one.
+
+The six ingest bugs from the first verification are fixed on this branch, each with a regression test in `tests/regressions.test.ts`:
+
+- A later OneNote page marks missing homework `Removed:` in the change feed and keeps the row.
+- A PowerSchool scores page with no section `frn` fails closed.
+- An HTML fragment is rejected.
+- `RETURNED` with `assignedGrade: null` is excused. A returned row with the field omitted is turned in, and the note says the excused state is unknown.
+- `missing_above` prints the threshold as a count.
+- The first import of any size writes one `baseline loaded` feed item.

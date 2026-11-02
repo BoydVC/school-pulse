@@ -23,6 +23,7 @@ import {
   insertGrade,
   insertStudent,
   latestGrade,
+  listAssignments,
   transaction,
   updateAssignment,
   updateCourse,
@@ -94,6 +95,36 @@ function applySnapshot(db: DatabaseSync, incoming: NormalizedSnapshot, now: Date
     const student = requireStudent(students, incoming.studentSourceId);
     const course = requireCourse(courses, incoming.studentSourceId, incoming.courseSourceId);
     const existing = getAssignmentBySource(db, snapshot.source, incoming.sourceId);
+    if (existing?.removed) {
+      updateAssignment(db, {
+        ...existing,
+        studentId: student.id,
+        courseId: course.id,
+        title: incoming.title,
+        due: incoming.due,
+        assigned: incoming.assigned,
+        status: incoming.status,
+        pointsEarned: incoming.pointsEarned,
+        pointsPossible: incoming.pointsPossible,
+        category: incoming.category,
+        url: incoming.url,
+        lastSeen: fetchedAt,
+        fetchedAt,
+        groupKey: incoming.groupKey ?? existing.groupKey,
+        removed: false,
+      });
+      drafts.push({
+        studentId: student.id,
+        courseId: course.id,
+        assignmentId: existing.id,
+        kind: "assignment_new",
+        summary: `Restored: ${incoming.title}`,
+        before: "removed",
+        after: incoming.title,
+      });
+      result.assignmentsUpdated += 1;
+      continue;
+    }
     if (!existing) {
       const created = insertAssignment(db, {
         studentId: student.id,
@@ -110,6 +141,8 @@ function applySnapshot(db: DatabaseSync, incoming: NormalizedSnapshot, now: Date
         sourceId: incoming.sourceId,
         lastSeen: fetchedAt,
         fetchedAt,
+        groupKey: incoming.groupKey,
+        removed: false,
       });
       result.assignmentsInserted += 1;
       newAssignments.push(created);
@@ -183,12 +216,40 @@ function applySnapshot(db: DatabaseSync, incoming: NormalizedSnapshot, now: Date
       url: incoming.url,
       lastSeen: fetchedAt,
       fetchedAt,
+      groupKey: incoming.groupKey ?? existing.groupKey,
+      removed: false,
     });
     result.assignmentsUpdated += 1;
   }
 
-  const emitNew = !(existingAssignments === 0 && newAssignments.length > 3);
-  if (emitNew) {
+  if (snapshot.source === "onenote") {
+    for (const removed of removedFromGroups(db, snapshot)) {
+      updateAssignment(db, { ...removed, removed: true, lastSeen: fetchedAt, fetchedAt });
+      drafts.push({
+        studentId: removed.studentId,
+        courseId: removed.courseId,
+        assignmentId: removed.id,
+        kind: "assignment_removed",
+        summary: `Removed: ${removed.title}`,
+        before: removed.title,
+        after: null,
+      });
+      result.assignmentsUpdated += 1;
+    }
+  }
+
+  if (existingAssignments === 0 && newAssignments.length > 0) {
+    const sample = newAssignments[0];
+    drafts.push({
+      studentId: sample?.studentId ?? null,
+      courseId: sample?.courseId ?? null,
+      assignmentId: null,
+      kind: "baseline",
+      summary: "baseline loaded",
+      before: null,
+      after: String(newAssignments.length),
+    });
+  } else {
     for (const assignment of newAssignments) {
       drafts.push({
         studentId: assignment.studentId,
@@ -348,6 +409,18 @@ function upsertCourse(
   updateCourse(db, next);
   result.coursesUpdated += 1;
   return next;
+}
+
+function removedFromGroups(db: DatabaseSync, snapshot: NormalizedSnapshot): Assignment[] {
+  if (snapshot.replaceGroups.length === 0) return [];
+  const groups = new Set(snapshot.replaceGroups);
+  const seen = new Set(snapshot.assignments.map((assignment) => assignment.sourceId));
+  return listAssignments(db).filter((assignment) => {
+    if (assignment.source !== snapshot.source || assignment.removed) return false;
+    if (!assignment.groupKey || !groups.has(assignment.groupKey)) return false;
+    if (seen.has(assignment.sourceId)) return false;
+    return assignment.fetchedAt <= snapshot.fetchedAt;
+  });
 }
 
 function sameAssignment(existing: Assignment, incoming: NormalizedAssignment, courseId: string): boolean {

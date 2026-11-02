@@ -82,6 +82,7 @@ function readAssignment(item: LooseRecord, now: Date): NormalizedAssignment | nu
     pointsPossible: asNumber(item.pointsPossible),
     category: asString(item.category),
     url: asString(item.url),
+    groupKey: null,
   };
 }
 
@@ -137,6 +138,7 @@ function parseCsv(raw: string, now: Date): NormalizedSnapshot {
         pointsPossible: cell(row, "points_possible") === "" ? null : asNumber(cell(row, "points_possible")),
         category: cell(row, "category") || null,
         url: cell(row, "url") || null,
+        groupKey: null,
       });
     }
     const percent = cell(row, "percent");

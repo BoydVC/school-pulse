@@ -20,7 +20,7 @@ export function evaluateAlerts(db: DatabaseSync, now: Date): Alert[] {
   if (rules.length === 0) return [];
   const students = listStudents(db);
   const courses = listCourses(db);
-  const assignments = listAssignments(db);
+  const assignments = listAssignments(db).filter((assignment) => !assignment.removed);
   const nameOf = (studentId: string): string => students.find((student) => student.id === studentId)?.name ?? "Student";
   const fired: Alert[] = [];
 
@@ -61,7 +61,7 @@ export function evaluateAlerts(db: DatabaseSync, now: Date): Alert[] {
         fired.push(
           insertAlert(db, {
             ruleId: rule.id,
-            summary: `${studentName} has ${count} missing, above ${formatPercent(rule.threshold)}`,
+            summary: `${studentName} has ${count} missing, above ${formatCount(rule.threshold)}`,
             dedupeKey,
             createdAt: now.toISOString(),
             source: "household",
@@ -132,6 +132,10 @@ export async function deliverWebhooks(db: DatabaseSync, alerts: Alert[]): Promis
     signal: AbortSignal.timeout(4000),
   });
   if (!response.ok) throw new Error(`Webhook responded ${response.status}`);
+}
+
+function formatCount(value: number): string {
+  return Number.isInteger(value) ? String(value) : String(value);
 }
 
 export function setWebhook(db: DatabaseSync, url: string | null): void {

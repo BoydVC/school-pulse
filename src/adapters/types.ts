@@ -27,6 +27,7 @@ export interface NormalizedAssignment {
   pointsPossible: number | null;
   category: string | null;
   url: string | null;
+  groupKey: string | null;
 }
 
 export interface NormalizedGrade {
@@ -44,8 +45,11 @@ export interface NormalizedSnapshot {
   courses: NormalizedCourse[];
   assignments: NormalizedAssignment[];
   grades: NormalizedGrade[];
+  /** Complete lists. Assignments in these groups that vanish from a later snapshot are marked removed. */
+  replaceGroups: string[];
+  notes: string[];
 }
 
 export function emptySnapshot(source: string, fetchedAt: string): NormalizedSnapshot {
-  return { source, fetchedAt, students: [], courses: [], assignments: [], grades: [] };
+  return { source, fetchedAt, students: [], courses: [], assignments: [], grades: [], replaceGroups: [], notes: [] };
 }

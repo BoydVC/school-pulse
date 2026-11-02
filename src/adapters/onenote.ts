@@ -145,6 +145,7 @@ function parseHomeworkLine(
       pointsPossible: flagged.possible,
       category: "Homework",
       url: null,
+      groupKey: null,
     };
   }
   return null;

@@ -53,6 +53,8 @@ CREATE TABLE IF NOT EXISTS assignments (
   source_id TEXT NOT NULL,
   last_seen TEXT NOT NULL,
   fetched_at TEXT NOT NULL,
+  group_key TEXT,
+  removed INTEGER NOT NULL DEFAULT 0 CHECK (removed IN (0, 1)),
   UNIQUE(source, source_id),
   CHECK (points_possible IS NULL OR points_possible > 0),
   CHECK (points_earned IS NULL OR points_earned >= 0),
@@ -208,6 +210,8 @@ function mapAssignment(row: Row): Assignment {
     sourceId: text(row, "source_id"),
     lastSeen: text(row, "last_seen"),
     fetchedAt: text(row, "fetched_at"),
+    groupKey: textOrNull(row, "group_key"),
+    removed: Number(row["removed"] ?? 0) === 1,
   };
 }
 
@@ -320,8 +324,8 @@ export function insertAssignment(db: DatabaseSync, assignment: Omit<Assignment, 
   db.prepare(
     `INSERT INTO assignments (
       id, student_id, course_id, title, due, assigned, status, points_earned, points_possible,
-      category, url, source, source_id, last_seen, fetched_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      category, url, source, source_id, last_seen, fetched_at, group_key, removed
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     assignment.studentId,
@@ -338,6 +342,8 @@ export function insertAssignment(db: DatabaseSync, assignment: Omit<Assignment, 
     assignment.sourceId,
     assignment.lastSeen,
     assignment.fetchedAt,
+    assignment.groupKey,
+    assignment.removed ? 1 : 0,
   );
   return { ...assignment, id };
 }
@@ -346,7 +352,8 @@ export function updateAssignment(db: DatabaseSync, assignment: Assignment): void
   db.prepare(
     `UPDATE assignments SET
       student_id = ?, course_id = ?, title = ?, due = ?, assigned = ?, status = ?,
-      points_earned = ?, points_possible = ?, category = ?, url = ?, last_seen = ?, fetched_at = ?
+      points_earned = ?, points_possible = ?, category = ?, url = ?, last_seen = ?, fetched_at = ?,
+      group_key = ?, removed = ?
      WHERE id = ?`,
   ).run(
     assignment.studentId,
@@ -361,6 +368,8 @@ export function updateAssignment(db: DatabaseSync, assignment: Assignment): void
     assignment.url,
     assignment.lastSeen,
     assignment.fetchedAt,
+    assignment.groupKey,
+    assignment.removed ? 1 : 0,
     assignment.id,
   );
 }

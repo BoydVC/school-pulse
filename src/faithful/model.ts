@@ -65,6 +65,8 @@ export interface ParsedAssignment {
   dropped: boolean;
   /** Complete-list key. Assignments in this key missing from a newer snapshot are dropped. */
   groupKey: string;
+  /** RETURNED with the assignedGrade field omitted. Excused cannot be told apart from ungraded. */
+  excusedUnknown?: boolean;
 }
 
 export interface ParsedGrade {

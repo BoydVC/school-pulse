@@ -92,8 +92,8 @@ Documented Classroom behavior that the fixtures lock in:
 - No `dueDate` means no due date. That row is not inferred as missing.
 - `StudentSubmission.state`: `NEW` (described in the prose for never-opened work; creation time may be absent) and `CREATED` are not turned in. `TURNED_IN`, `RETURNED`, and `STUDENT_EDITED_AFTER_TURN_IN` are turned in. `RECLAIMED_BY_STUDENT` is unsubmitted again.
 - `late: true` on turned-in work is status `late`. Past due and still `NEW` / `CREATED` / reclaimed is status `missing`. Missing counts as `draftGrade`, which Classroom defaults to 0.
-- `RETURNED` with `assignedGrade` is graded. `RETURNED` with no grade is `turned_in`, not excused.
-- **Excused is not a field.** Google's grades guide says complete, missing, and excused are not distinctly identifiable on `StudentSubmission`, and excused work is only described as removed from the overall calculation. This parser does not guess. A returned submission with no points stays `turned_in`.
+- `RETURNED` with a numeric `assignedGrade` is graded.
+- **Excused is not a Classroom field.** The grades guide says complete, missing, and excused are not distinct `StudentSubmission` values. Heuristic: `RETURNED` with `"assignedGrade": null` (the key is present and the value is null) is excused, and those points stay out of the overall percent. `RETURNED` with the `assignedGrade` key omitted stays `turned_in`, and the snapshot note says the excused state is unknown. A numeric grade is never called excused.
 - `DRAFT` and `DELETED` coursework are skipped.
 - `assigneeMode: INDIVIDUAL_STUDENTS` whose `studentIds` omit this student is dropped (not assigned), not missing.
 - `ARCHIVED` courses are skipped.
