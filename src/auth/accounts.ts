@@ -276,6 +276,7 @@ export async function signInAccount(options: AuthFlowOptions & {
   studentId: string;
   storePath: string;
   profileUrl?: string;
+  reassign?: boolean;
 }): Promise<AccountToken> {
   const studentId = assertStudentId(options.studentId);
   const flow = await runInstalledAppFlow({ ...options, skipWrite: true });
