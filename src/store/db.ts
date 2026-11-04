@@ -383,6 +383,11 @@ export function countAssignmentsBySource(db: DatabaseSync, source: string): numb
   return row ? Number(numberOrNull(row, "n") ?? 0) : 0;
 }
 
+export function countAssignmentsForStudent(db: DatabaseSync, source: string, studentId: string): number {
+  const row = db.prepare("SELECT COUNT(*) AS n FROM assignments WHERE source = ? AND student_id = ?").get(source, studentId);
+  return row ? Number(numberOrNull(row, "n") ?? 0) : 0;
+}
+
 export function listGrades(db: DatabaseSync): GradeSnapshot[] {
   return db.prepare("SELECT * FROM grade_snapshots ORDER BY as_of").all().map(mapGrade);
 }

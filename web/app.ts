@@ -66,7 +66,7 @@ interface Dashboard {
   grades: GradeRow[];
   students: StudentCard[];
   changes: ChangeItem[];
-  sources: Array<{ source: string; state: "fresh" | "aging" | "stale"; text: string }>;
+  sources: Array<{ source: string; state: "fresh" | "aging" | "stale" | "reauth"; text: string }>;
   counts: { students: number; assignments: number; missing: number };
 }
 

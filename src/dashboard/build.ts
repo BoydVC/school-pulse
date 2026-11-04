@@ -13,7 +13,7 @@ import {
 } from "../model/dates.js";
 import { activeTimezone } from "../time/zone.js";
 import { describeDueChange, describeNewAssignment, formatPercent } from "../model/english.js";
-import { compareSources, freshnessBadge, sourceLabel } from "../model/freshness.js";
+import { compareSources, freshnessBadge, reauthBadgeText, sourceLabel, type SourceState } from "../model/freshness.js";
 import type { Assignment, Change, Course } from "../model/types.js";
 import { listAssignments, listChanges, listCourses, listGrades, listGradesForCourse, listStudents } from "../store/db.js";
 import { studentKey } from "../util/text.js";
@@ -97,11 +97,16 @@ export interface DashboardData {
   grades: GradeRow[];
   students: StudentCard[];
   changes: ChangeItem[];
-  sources: Array<{ source: string; label: string; state: "fresh" | "aging" | "stale"; text: string; fetchedAt: string }>;
+  sources: Array<{ source: string; label: string; state: SourceState; text: string; fetchedAt: string }>;
   counts: { students: number; assignments: number; sources: number; missing: number };
 }
 
-export function buildDashboard(db: DatabaseSync, now: Date): DashboardData {
+export interface ReauthNotice {
+  source: string;
+  studentId: string;
+}
+
+export function buildDashboard(db: DatabaseSync, now: Date, options?: { reauth?: ReauthNotice[] }): DashboardData {
   const students = listStudents(db);
   const courses = listCourses(db);
   const assignments = listAssignments(db).filter((assignment) => !assignment.removed);
@@ -237,12 +242,15 @@ export function buildDashboard(db: DatabaseSync, now: Date): DashboardData {
     grades: gradeRows,
     students: cards,
     changes: changes.map((change) => toChange(change, now, studentById, courseById, assignmentById)),
-    sources: [...freshest.entries()]
-      .sort((a, b) => compareSources(a[0], b[0]))
-      .map(([source, fetchedAt]) => {
-        const badge = freshnessBadge(source, fetchedAt, now);
-        return { source, label: sourceLabel(source), state: badge.state, text: badge.text, fetchedAt };
-      }),
+    sources: withReauth(
+      [...freshest.entries()]
+        .sort((a, b) => compareSources(a[0], b[0]))
+        .map(([source, fetchedAt]) => {
+          const badge = freshnessBadge(source, fetchedAt, now);
+          return { source, label: sourceLabel(source), state: badge.state, text: badge.text, fetchedAt };
+        }),
+      options?.reauth ?? [],
+    ),
     counts: {
       students: cards.length,
       assignments: assignments.length,
@@ -250,6 +258,32 @@ export function buildDashboard(db: DatabaseSync, now: Date): DashboardData {
       missing: tonightItems.filter((item) => item.status === "missing").length,
     },
   };
+}
+
+function withReauth(sources: DashboardData["sources"], reauth: ReauthNotice[]): DashboardData["sources"] {
+  if (reauth.length === 0) return sources;
+  const bySource = new Map<string, string[]>();
+  for (const notice of reauth) {
+    const ids = bySource.get(notice.source) ?? [];
+    if (notice.studentId && !ids.includes(notice.studentId)) ids.push(notice.studentId);
+    bySource.set(notice.source, ids);
+  }
+  const next = sources.map((source) => {
+    const ids = bySource.get(source.source);
+    if (!ids) return source;
+    bySource.delete(source.source);
+    return { ...source, state: "reauth" as const, text: reauthBadgeText(source.source, ids) };
+  });
+  for (const [source, ids] of bySource) {
+    next.push({
+      source,
+      label: sourceLabel(source),
+      state: "reauth",
+      text: reauthBadgeText(source, ids),
+      fetchedAt: "",
+    });
+  }
+  return next.sort((a, b) => compareSources(a.source, b.source));
 }
 
 function toGrade(course: Course, studentName: string, key: string, snaps: ReturnType<typeof listGradesForCourse>): GradeRow {

@@ -24,13 +24,19 @@ test("generic CSV accepts quotes and blank scores", () => {
   assert.equal(snapshot.grades.length, 1);
 });
 
-test("generic JSON rejects an unknown status", () => {
+test("generic JSON skips an unknown status and keeps the other rows", () => {
   const raw = JSON.stringify({
-    students: [{ sourceId: "stu-a", name: "Student A" }],
+    students: [{ sourceId: "stu-a", name: "Student A", school: "Pinecrest Middle" }],
     courses: [{ sourceId: "c", studentSourceId: "stu-a", name: "Math" }],
-    assignments: [{ sourceId: "a", studentSourceId: "stu-a", courseSourceId: "c", title: "HW", status: "lost" }],
+    assignments: [
+      { sourceId: "a", studentSourceId: "stu-a", courseSourceId: "c", title: "HW", status: "assigned" },
+      { sourceId: "b", studentSourceId: "stu-a", courseSourceId: "c", title: "HW", status: "lost" },
+    ],
   });
-  assert.throws(() => parseSnapshot({ source: "generic", filename: "bad.json", raw, now }), /Unknown assignment status/);
+  const snapshot = parseSnapshot({ source: "generic", filename: "bad.json", raw, now });
+  assert.equal(snapshot.assignments.length, 1);
+  assert.equal(snapshot.assignments[0]?.sourceId, "a");
+  assert.deepEqual(snapshot.rejected, [{ index: 1, reason: 'Unknown assignment status "lost" on HW' }]);
 });
 
 test("sniffs a Classroom export dropped without a source flag", () => {

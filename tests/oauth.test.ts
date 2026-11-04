@@ -18,6 +18,10 @@ test("authorize URLs are loopback installed-app requests with read-only scopes",
   assert.equal(classroom.searchParams.get("response_type"), "code");
   assert.equal(classroom.searchParams.get("code_challenge_method"), "S256");
   assert.equal(classroom.searchParams.get("redirect_uri"), "http://127.0.0.1:9/callback");
+  assert.equal(classroom.searchParams.get("access_type"), "offline");
+  assert.equal(classroom.searchParams.get("prompt"), "consent");
+  assert.match(classroom.searchParams.get("scope") ?? "", /\bopenid\b/);
+  assert.match(classroom.searchParams.get("scope") ?? "", /\bemail\b/);
   for (const scope of CLASSROOM_SCOPES) assert.match(classroom.searchParams.get("scope") ?? "", new RegExp(scope.replace(/[.]/g, "\\.")));
   assert.equal((classroom.searchParams.get("scope") ?? "").includes("classroom.coursework.students"), false);
 
@@ -30,7 +34,10 @@ test("authorize URLs are loopback installed-app requests with read-only scopes",
   }));
   assert.match(graph.origin, /login\.microsoftonline\.com$/);
   for (const scope of ONENOTE_SCOPES) assert.match(graph.searchParams.get("scope") ?? "", new RegExp(scope.replace(/[.]/g, "\\.")));
+  assert.match(graph.searchParams.get("scope") ?? "", /offline_access/);
   assert.equal((graph.searchParams.get("scope") ?? "").includes("Mail."), false);
+  assert.equal((graph.searchParams.get("scope") ?? "").includes("Notes.ReadWrite"), false);
+  assert.equal(graph.searchParams.get("access_type"), null);
 });
 
 test("the loopback flow stores a token and never echoes it in the browser page", async () => {
@@ -68,7 +75,9 @@ test("the loopback flow stores a token and never echoes it in the browser page",
   tokenServer.close();
   const parsed = new URL(seen);
   assert.equal(parsed.searchParams.get("redirect_uri")?.startsWith("http://127.0.0.1:"), true);
-  const stored = JSON.parse(readFileSync(result.path, "utf8")) as { access_token: string };
+  const stored = JSON.parse(readFileSync(result.path, "utf8")) as { access_token: string; refresh_token: string };
   assert.equal(stored.access_token, "synthetic-access-token");
+  assert.equal(stored.refresh_token, "synthetic-refresh");
+  assert.equal(result.token.refresh_token, "synthetic-refresh");
   assert.equal(result.authorizeUrl.includes("synthetic-access-token"), false);
 });

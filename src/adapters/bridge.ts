@@ -35,6 +35,7 @@ export function fromFaithful(batch: ParsedBatch, timeZone = activeTimezone()): N
         category: assignment.category,
         url: assignment.url,
         groupKey: assignment.groupKey,
+        rowIndex: assignment.rowIndex,
       })),
     grades: batch.grades
       .filter((grade) => grade.percent !== null || (grade.letter !== null && grade.letter !== ""))
@@ -47,6 +48,7 @@ export function fromFaithful(batch: ParsedBatch, timeZone = activeTimezone()): N
       })),
     replaceGroups: batch.replaceGroups,
     notes: batch.notes,
+    rejected: batch.rejected ?? [],
   };
 }
 

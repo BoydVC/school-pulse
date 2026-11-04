@@ -1,5 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
-import type { NormalizedAssignment, NormalizedGrade, NormalizedSnapshot } from "../adapters/types.js";
+import type { NormalizedAssignment, NormalizedGrade, NormalizedSnapshot, RejectedRow } from "../adapters/types.js";
 import { enforceSnapshot } from "../domain/enforce.js";
 import { formatDuePhrase } from "../model/dates.js";
 import {
@@ -12,7 +12,7 @@ import {
 } from "../model/english.js";
 import type { Assignment, Change, Course, GradeSnapshot, Student } from "../model/types.js";
 import {
-  countAssignmentsBySource,
+  countAssignmentsForStudent,
   getAssignmentBySource,
   getCourseBySource,
   getGradeAt,
@@ -45,6 +45,7 @@ export interface IngestResult {
   gradesInserted: number;
   changes: Change[];
   alerts: Alert[];
+  rejected: RejectedRow[];
 }
 
 interface Draft {
@@ -64,7 +65,8 @@ export function ingestSnapshot(db: DatabaseSync, snapshot: NormalizedSnapshot, n
 function applySnapshot(db: DatabaseSync, incoming: NormalizedSnapshot, now: Date): IngestResult {
   const snapshot = enforceSnapshot(incoming);
   const fetchedAt = snapshot.fetchedAt || now.toISOString();
-  const existingAssignments = countAssignmentsBySource(db, snapshot.source);
+  const rejected = snapshot.rejected ?? [];
+  for (const row of rejected) console.error(`Rejected row ${row.index}: ${row.reason}`);
   const result: IngestResult = {
     unchanged: false,
     studentsInserted: 0,
@@ -76,6 +78,7 @@ function applySnapshot(db: DatabaseSync, incoming: NormalizedSnapshot, now: Date
     gradesInserted: 0,
     changes: [],
     alerts: [],
+    rejected,
   };
   const drafts: Draft[] = [];
   const students = new Map<string, Student>();
@@ -88,6 +91,11 @@ function applySnapshot(db: DatabaseSync, incoming: NormalizedSnapshot, now: Date
     const student = requireStudent(students, incoming.studentSourceId);
     const stored = upsertCourse(db, snapshot.source, incoming, student, fetchedAt, result);
     courses.set(courseKey(incoming.studentSourceId, incoming.sourceId), stored);
+  }
+
+  const established = new Set<string>();
+  for (const student of students.values()) {
+    if (countAssignmentsForStudent(db, snapshot.source, student.id) > 0) established.add(student.id);
   }
 
   const newAssignments: Assignment[] = [];
@@ -238,19 +246,20 @@ function applySnapshot(db: DatabaseSync, incoming: NormalizedSnapshot, now: Date
     }
   }
 
-  if (existingAssignments === 0 && newAssignments.length > 0) {
-    const sample = newAssignments[0];
-    drafts.push({
-      studentId: sample?.studentId ?? null,
-      courseId: sample?.courseId ?? null,
-      assignmentId: null,
-      kind: "baseline",
-      summary: "baseline loaded",
-      before: null,
-      after: String(newAssignments.length),
-    });
+  const fresh = newAssignments.filter((assignment) => !established.has(assignment.studentId));
+  const familiar = newAssignments.filter((assignment) => established.has(assignment.studentId));
+  if (fresh.length > 0 && familiar.length === 0) {
+    const sample = fresh[0];
+    drafts.push(baselineDraft(sample, fresh.length));
   } else {
-    for (const assignment of newAssignments) {
+    const seen = new Set<string>();
+    for (const assignment of fresh) {
+      if (seen.has(assignment.studentId)) continue;
+      seen.add(assignment.studentId);
+      const count = fresh.filter((item) => item.studentId === assignment.studentId).length;
+      drafts.push(baselineDraft(assignment, count));
+    }
+    for (const assignment of familiar) {
       drafts.push({
         studentId: assignment.studentId,
         courseId: assignment.courseId,
@@ -298,6 +307,18 @@ function applySnapshot(db: DatabaseSync, incoming: NormalizedSnapshot, now: Date
       result.alerts.length ===
     0;
   return result;
+}
+
+function baselineDraft(sample: Assignment | undefined, count: number): Draft {
+  return {
+    studentId: sample?.studentId ?? null,
+    courseId: sample?.courseId ?? null,
+    assignmentId: null,
+    kind: "baseline",
+    summary: "baseline loaded",
+    before: null,
+    after: String(count),
+  };
 }
 
 function applyGrades(

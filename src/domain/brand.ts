@@ -78,7 +78,7 @@ const SOURCE_ID = /^[A-Za-z0-9][A-Za-z0-9._:!~-]{0,400}$/;
 const INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/;
 const PERSON = /^[\p{L}\p{N}][\p{L}\p{N} .'+-]{0,79}$/u;
 const COURSE = /^[\p{L}\p{N}][\p{L}\p{N} .'+-]{0,79}$/u;
-const TITLE = /^[\p{L}\p{N}][\p{L}\p{N} .'+,:;#()/_-]{0,159}$/u;
+const CONTROL = /\p{Cc}/u;
 
 export function isSource(value: string): value is Source {
   return (SOURCES as readonly string[]).includes(value);
@@ -148,8 +148,11 @@ export function courseName(raw: string): Result<CourseName, DomainError> {
 }
 
 export function title(raw: string): Result<Title, DomainError> {
-  const value = raw.trim().replace(/\s+/g, " ");
-  if (value.includes("@") || !TITLE.test(value)) {
+  if (/^\s/u.test(raw) || CONTROL.test(raw) || raw.includes("@")) {
+    return err({ kind: "bad_title", value: raw });
+  }
+  const value = raw.replace(/ {2,}/g, " ").trimEnd();
+  if (value.length < 1 || value.length > 160) {
     return err({ kind: "bad_title", value: raw });
   }
   return ok(value as Title);

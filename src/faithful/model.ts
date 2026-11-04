@@ -67,6 +67,8 @@ export interface ParsedAssignment {
   groupKey: string;
   /** RETURNED with the assignedGrade field omitted. Excused cannot be told apart from ungraded. */
   excusedUnknown?: boolean;
+  /** Position in a generic file's assignment list. */
+  rowIndex?: number;
 }
 
 export interface ParsedGrade {
@@ -92,6 +94,8 @@ export interface ParsedBatch {
   replaceGroups: string[];
   /** Fidelity notes a parser wants the caller to see (not persisted as changes). */
   notes: string[];
+  /** Generic assignment rows that were skipped, indexed in the file. */
+  rejected?: { index: number; reason: string }[];
 }
 
 export class AdapterError extends Error {

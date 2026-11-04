@@ -37,10 +37,13 @@ function parseJson(data: LooseRecord, now: Date): NormalizedSnapshot {
       period: asString(course.period),
     });
   }
-  for (const item of arrayOf(data.assignments)) {
-    const assignment = readAssignment(item, now);
-    if (assignment) snapshot.assignments.push(assignment);
-  }
+  const items = arrayOf(data.assignments);
+  const rejected = snapshot.rejected ?? [];
+  items.forEach((item, index) => {
+    const assignment = readAssignment(item, now, (reason) => rejected.push({ index, reason }));
+    if (assignment) snapshot.assignments.push({ ...assignment, rowIndex: index });
+  });
+  snapshot.rejected = rejected;
   for (const grade of arrayOf(data.grades)) {
     const studentSourceId = asString(grade.studentSourceId ?? grade.studentId);
     const courseSourceId = asString(grade.courseSourceId ?? grade.courseId);
@@ -57,14 +60,16 @@ function parseJson(data: LooseRecord, now: Date): NormalizedSnapshot {
   return snapshot;
 }
 
-function readAssignment(item: LooseRecord, now: Date): NormalizedAssignment | null {
+function readAssignment(item: LooseRecord, now: Date, reject: (reason: string) => void): NormalizedAssignment | null {
   const title = asString(item.title ?? item.name);
   const studentSourceId = asString(item.studentSourceId ?? item.studentId);
   const courseSourceId = asString(item.courseSourceId ?? item.courseId);
   const status = asString(item.status) ?? "assigned";
   if (!title || !studentSourceId || !courseSourceId || !isAssignmentStatus(status)) {
     if (title && studentSourceId && courseSourceId && !isAssignmentStatus(status)) {
-      throw new Error(`Unknown assignment status "${status}" on ${title}`);
+      reject(`Unknown assignment status "${status}" on ${title}`);
+    } else if (title || studentSourceId || courseSourceId || asString(item.status)) {
+      reject("Generic assignment is missing a title, student, or course");
     }
     return null;
   }
@@ -97,8 +102,8 @@ function parseCsv(raw: string, now: Date): NormalizedSnapshot {
     const position = index.get(name);
     return position === undefined ? "" : (row[position] ?? "").trim();
   };
-  for (const row of rows.slice(1)) {
-    if (row.every((value) => value.trim() === "")) continue;
+  rows.slice(1).forEach((row, rowIndex) => {
+    if (row.every((value) => value.trim() === "")) return;
     const studentName = cell(row, "student") || "Student";
     const studentSourceId = cell(row, "student_id") || slug(studentName);
     const courseName = cell(row, "course") || "Class";
@@ -123,7 +128,10 @@ function parseCsv(raw: string, now: Date): NormalizedSnapshot {
     const title = cell(row, "title");
     const status = cell(row, "status") || "assigned";
     if (title) {
-      if (!isAssignmentStatus(status)) throw new Error(`Unknown assignment status "${status}" on ${title}`);
+      if (!isAssignmentStatus(status)) {
+        snapshot.rejected = [...(snapshot.rejected ?? []), { index: rowIndex, reason: `Unknown assignment status "${status}" on ${title}` }];
+        return;
+      }
       const due = cell(row, "due");
       const assigned = cell(row, "assigned");
       snapshot.assignments.push({
@@ -139,6 +147,7 @@ function parseCsv(raw: string, now: Date): NormalizedSnapshot {
         category: cell(row, "category") || null,
         url: cell(row, "url") || null,
         groupKey: null,
+        rowIndex,
       });
     }
     const percent = cell(row, "percent");
@@ -153,7 +162,7 @@ function parseCsv(raw: string, now: Date): NormalizedSnapshot {
         asOf: asOf ? parseLooseDate(asOf, now)?.toISOString() ?? fetchedAt : fetchedAt,
       });
     }
-  }
+  });
   return snapshot;
 }
 

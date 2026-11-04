@@ -57,7 +57,7 @@ Save the JSON list responses, or let `school-pulse sync` do the GETs. A snapshot
 
 ### OAuth scopes
 
-Create a desktop OAuth client in Google Cloud. Put the access token in `data/tokens/google-classroom.json` as `{ "access_token": "…" }` or in `SCHOOL_PULSE_CLASSROOM_TOKEN`.
+Create a desktop OAuth client in Google Cloud. The steps are in [Google Cloud desktop OAuth client](#google-cloud-desktop-oauth-client) below. `school-pulse auth classroom --student <id>` writes `data/tokens/google-classroom.json`. That file holds one account per signed-in student. A single `{ "access_token": "…" }` file from an older install still syncs as student `legacy`. `SCHOOL_PULSE_CLASSROOM_TOKEN` is used only when the file has no accounts, and it cannot be refreshed.
 
 Use read-only scopes. School Pulse never calls `turnIn`, `return`, `patch`, or `modifyAttachments`.
 
@@ -116,7 +116,7 @@ Delegated, read-only:
 
 That is enough for notebooks shared with the signed-in student, including the student section group of a class notebook. Do not request `Notes.ReadWrite` or `Notes.Create`. School Pulse only GETs.
 
-Token file: `data/tokens/microsoft-graph.json` with `{ "access_token": "…" }`, or `SCHOOL_PULSE_GRAPH_TOKEN`.
+Token file: `data/tokens/microsoft-graph.json`, one account per signed-in student, written by `school-pulse auth onenote --student <id>`. A single `{ "access_token": "…" }` file still syncs as student `legacy`. `SCHOOL_PULSE_GRAPH_TOKEN` is used only when the file has no accounts.
 
 `school-pulse sync` lists notebooks, keeps sections named Homework or Quizzes (the class-notebook defaults that actually hold work), and downloads each page's `contentUrl`.
 
@@ -171,7 +171,7 @@ JSON:
 }
 ```
 
-`status` is one of `assigned`, `turned_in`, `graded`, `missing`, `late`, `excused`. Anything else is an error. CSV uses the same column names. A title that contains a comma belongs in quotes.
+`status` is one of `assigned`, `turned_in`, `graded`, `missing`, `late`, `excused`. A row with any other status, or a title that fails the household rules, is skipped. The other rows are ingested. The response lists the skipped ones as `rejected: [{ "index": 1, "reason": "…" }]`, and the process logs `Rejected row 1: …`. `index` is the position in the file's `assignments` array. CSV uses the same column names. A title that contains a comma belongs in quotes.
 
 ## Idempotency and terms
 
@@ -199,29 +199,114 @@ DST follows the IANA zone. On the 2026 fall-back morning both 1:30am instants ar
 
 Read-only installed-app flow. The CLI binds `127.0.0.1` to a free port, prints an authorize URL, and waits for the browser to redirect to `http://127.0.0.1:<port>/callback`. PKCE S256. No client secret is required. If a secret is set it is sent only to the token endpoint, never written to the repo.
 
+Sign in once per student. The id you pass is your household label (`stu-a`, `stu-b`). It is stored on that account. The file key is the signed-in email when the provider returns one, otherwise `id:<account id>`.
+
 ```bash
 export SCHOOL_PULSE_GOOGLE_CLIENT_ID="your-desktop-client-id"
-school-pulse auth classroom
+school-pulse auth classroom --student stu-a
+school-pulse auth classroom --student stu-b
 
 export SCHOOL_PULSE_GRAPH_CLIENT_ID="your-public-client-id"
-school-pulse auth onenote
+school-pulse auth onenote --student stu-a
+school-pulse auth onenote --student stu-b
+
+school-pulse auth status
+school-pulse sync
 ```
 
-Optional: `SCHOOL_PULSE_GOOGLE_CLIENT_SECRET`, `SCHOOL_PULSE_GRAPH_CLIENT_SECRET`, `SCHOOL_PULSE_GRAPH_TENANT` (default `common`).
+`school-pulse auth status` prints each account, the student id, whether a refresh token is saved, and the expiry. It does not print access tokens or refresh tokens. An account whose refresh failed is listed as `re-auth needed`.
 
-Tokens land in `data/tokens/google-classroom.json` and `data/tokens/microsoft-graph.json` (mode 0600). That directory is git-ignored with the rest of `data/`. The browser page does not display the token.
+Optional: `SCHOOL_PULSE_GOOGLE_CLIENT_SECRET`, `SCHOOL_PULSE_GRAPH_CLIENT_SECRET`, `SCHOOL_PULSE_GRAPH_TENANT` (default `common`). The same client id is set in the environment for `sync`, because a refresh call needs it.
 
-Classroom scopes:
+Tokens land in `data/tokens/google-classroom.json` and `data/tokens/microsoft-graph.json` (mode 0600). Both files are version 2 stores:
 
+```json
+{
+  "version": 2,
+  "accounts": {
+    "student.a@example.com": {
+      "accountKey": "student.a@example.com",
+      "email": "student.a@example.com",
+      "accountId": "10001",
+      "studentId": "stu-a",
+      "access_token": "…",
+      "refresh_token": "…",
+      "token_type": "Bearer",
+      "scope": "…",
+      "expires_at": "2026-11-02T20:00:00.000Z",
+      "reauth_needed": false,
+      "reauth_reason": null,
+      "updated_at": "2026-11-02T19:00:00.000Z"
+    }
+  }
+}
+```
+
+A second student's sign-in adds another key. It does not remove the first. Signing the same account in again updates that key and leaves the others. The directory is git-ignored with the rest of `data/`. The browser page does not display the token. An older file that is only `{ "access_token": "…" }` is read as one account with student id `legacy`.
+
+Classroom authorize requests `access_type=offline` and `prompt=consent`, so Google returns a refresh token. Scopes:
+
+- `openid`
+- `email`
 - `https://www.googleapis.com/auth/classroom.courses.readonly`
 - `https://www.googleapis.com/auth/classroom.coursework.me.readonly`
 - `https://www.googleapis.com/auth/classroom.student-submissions.me.readonly`
 
-Graph scopes: `offline_access` and `https://graph.microsoft.com/Notes.Read`.
+Graph scopes: `offline_access`, `openid`, `email`, `User.Read`, and `https://graph.microsoft.com/Notes.Read`. `offline_access` is what makes Microsoft return a refresh token. `User.Read` and `email` are how the two students are told apart. There is no `Notes.ReadWrite`.
 
-`school-pulse sync` GETs Classroom and OneNote with those tokens and writes the JSON into the inbox. It does not call turn-in, return, or page-update methods. PowerSchool has no auth command. Save the guardian pages into `data/inbox/powerschool/`.
+`school-pulse sync` GETs Classroom and OneNote once per saved account and writes each snapshot into the inbox. A token that expires within 60 seconds is refreshed first. A 401 refreshes once and the GET is retried. The new access token is written back. If the provider omits a new refresh token, the previous one stays. If the refresh is rejected, that account is marked and the dashboard freshness badge for the source reads `Classroom · stu-a · re-auth needed` (or `OneNote · … · re-auth needed`). Other students in the file keep syncing. Sync does not call turn-in, return, or page-update methods. PowerSchool has no auth command. Save the guardian pages into `data/inbox/powerschool/`.
 
 Register the loopback redirect as an installed / desktop client. Google and Microsoft both allow `http://127.0.0.1` with a port chosen at runtime for native apps.
+
+### Google Cloud desktop OAuth client
+
+Do this once per household. The same desktop client signs in every student.
+
+1. Open [Google Cloud Console](https://console.cloud.google.com/) and create a project named `School Pulse`.
+2. Enable the Classroom API. **APIs & Services → Library**, search **Google Classroom API**, click **Enable**. Direct link: `https://console.cloud.google.com/apis/library/classroom.googleapis.com`.
+3. Open the consent screen. The current console calls this **Google Auth Platform → Branding**. The older label is **APIs & Services → OAuth consent screen**.
+   - App name: `School Pulse`
+   - User support email: your own email
+   - Audience: **External**
+   - Leave publishing status at **Testing**. You do not need Google to verify the app to use it for your own children.
+4. Add scopes under **Google Auth Platform → Data Access** (older label: **Scopes**):
+   - `openid`
+   - `email`
+   - `https://www.googleapis.com/auth/classroom.courses.readonly`
+   - `https://www.googleapis.com/auth/classroom.coursework.me.readonly`
+   - `https://www.googleapis.com/auth/classroom.student-submissions.me.readonly`
+   Do not add `.students` scopes or any scope that can submit or grade work.
+5. Add test users under **Google Auth Platform → Audience**. Add each student's Google account. While the app stays in Testing, only those accounts can sign in.
+6. Create the client. **Google Auth Platform → Clients → Create client** (older path: **APIs & Services → Credentials → Create credentials → OAuth client ID**).
+   - Application type: **Desktop app**
+   - Name: `School Pulse`
+7. Copy the **Client ID** (it ends in `.apps.googleusercontent.com`). School Pulse uses PKCE and does not need the client secret. If a secret is required by the token endpoint, set `SCHOOL_PULSE_GOOGLE_CLIENT_SECRET` in the environment. It is not written into the repo or the token file.
+8. Do not register a web redirect URI. Desktop clients may use `http://127.0.0.1` with a port chosen at sign-in.
+9. Export the client id and sign each student in from a browser session that is that student (sign out, or use a private window):
+
+```bash
+export SCHOOL_PULSE_GOOGLE_CLIENT_ID="YOUR_CLIENT_ID.apps.googleusercontent.com"
+school-pulse auth classroom --student stu-a
+school-pulse auth classroom --student stu-b
+school-pulse auth status
+```
+
+Google expires refresh tokens for apps that remain in Testing after 7 days. The badge then says `re-auth needed`. Run auth again for that student. The other accounts stay in the file.
+
+### Microsoft Graph app registration
+
+1. In the Microsoft Entra admin center, open **App registrations → New registration**.
+2. Name: `School Pulse`. Supported accounts: personal Microsoft accounts and any organizational directory (the `common` tenant).
+3. Redirect URI: **Public client/native (mobile & desktop)**, `http://127.0.0.1`.
+4. After it is created, open **Authentication** and set **Allow public client flows** to Yes.
+5. **API permissions → Microsoft Graph → Delegated**: `Notes.Read`, `User.Read`, `offline_access`, `openid`, `email`. Do not add `Notes.ReadWrite`. The student consents at sign-in. Personal accounts do not need an admin consent click for these.
+6. Copy the Application (client) ID into `SCHOOL_PULSE_GRAPH_CLIENT_ID`.
+
+```bash
+export SCHOOL_PULSE_GRAPH_CLIENT_ID="your-application-id"
+school-pulse auth onenote --student stu-a
+school-pulse auth onenote --student stu-b
+```
 
 ## `POST /api/ingest`
 
@@ -248,7 +333,7 @@ Content-Type: application/json
 Success `200`:
 
 ```json
-{ "ok": true, "unchanged": false, "assignmentsInserted": 1, "assignmentsUpdated": 0, "gradesInserted": 0, "changes": [], "alerts": [] }
+{ "ok": true, "unchanged": false, "assignmentsInserted": 1, "assignmentsUpdated": 0, "gradesInserted": 0, "changes": [], "alerts": [], "rejected": [] }
 ```
 
 `unchanged: true` means the same rows were already stored. Parse errors are `400` `{ "ok": false, "error": "…" }`. Bodies over 5 MB are `413`. A successful change is also pushed to `GET /api/events` as a server-sent `pulse`, so the open dashboard updates without a reload.

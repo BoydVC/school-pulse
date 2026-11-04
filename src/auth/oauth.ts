@@ -9,7 +9,15 @@ export const CLASSROOM_SCOPES = [
   "https://www.googleapis.com/auth/classroom.student-submissions.me.readonly",
 ] as const;
 
-export const ONENOTE_SCOPES = ["offline_access", "https://graph.microsoft.com/Notes.Read"] as const;
+export const ONENOTE_SCOPES = [
+  "offline_access",
+  "openid",
+  "email",
+  "https://graph.microsoft.com/User.Read",
+  "https://graph.microsoft.com/Notes.Read",
+] as const;
+
+const CLASSROOM_IDENTITY_SCOPES = ["openid", "email"] as const;
 
 export type AuthKind = "classroom" | "onenote";
 
@@ -19,23 +27,36 @@ export interface StoredToken {
   token_type: string;
   scope: string;
   expires_at: string | null;
+  /** Present on the auth-code response when the provider sends one. Not written to disk. */
+  id_token?: string | null;
+}
+
+export class ReauthRequiredError extends Error {
+  readonly reason: string;
+  constructor(reason: string) {
+    super(`re-auth needed (${reason})`);
+    this.name = "ReauthRequiredError";
+    this.reason = reason;
+  }
 }
 
 export interface AuthFlowOptions {
   kind: AuthKind;
   clientId: string;
   clientSecret?: string | null;
-  tokenPath: string;
+  tokenPath?: string;
   tenant?: string;
   authorizeUrl?: string;
   tokenUrl?: string;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
   onAuthorizeUrl?: (url: string) => void;
+  /** When true, the caller stores the token (one file can hold several accounts). */
+  skipWrite?: boolean;
 }
 
 export function scopesFor(kind: AuthKind): readonly string[] {
-  return kind === "classroom" ? CLASSROOM_SCOPES : ONENOTE_SCOPES;
+  return kind === "classroom" ? [...CLASSROOM_IDENTITY_SCOPES, ...CLASSROOM_SCOPES] : ONENOTE_SCOPES;
 }
 
 export function defaultAuthorizeUrl(kind: AuthKind, tenant = "common"): string {
@@ -100,19 +121,86 @@ export async function exchangeAuthCode(input: {
     headers: { "content-type": "application/x-www-form-urlencoded" },
     body,
   });
-  const payload = (await response.json()) as { access_token?: unknown; refresh_token?: unknown; token_type?: unknown; scope?: unknown; expires_in?: unknown; error?: unknown; error_description?: unknown };
-  if (!response.ok || typeof payload.access_token !== "string") {
-    const detail = typeof payload.error_description === "string" ? payload.error_description : typeof payload.error === "string" ? payload.error : `HTTP ${response.status}`;
-    throw new Error(`Token endpoint refused the code (${detail})`);
+  const payload = (await response.json()) as TokenPayload;
+  return tokenFromPayload(payload, response.ok, response.status, input.kind, null, "Token endpoint refused the code");
+}
+
+export async function refreshAccessToken(input: {
+  kind: AuthKind;
+  clientId: string;
+  clientSecret?: string | null;
+  refreshToken: string;
+  scope?: string;
+  tokenUrl?: string;
+  tenant?: string;
+  fetchImpl?: typeof fetch;
+  now?: Date;
+}): Promise<StoredToken> {
+  const body = new URLSearchParams({
+    client_id: input.clientId,
+    grant_type: "refresh_token",
+    refresh_token: input.refreshToken,
+  });
+  if (input.clientSecret) body.set("client_secret", input.clientSecret);
+  if (input.kind === "onenote") body.set("scope", input.scope || scopesFor("onenote").join(" "));
+  const response = await (input.fetchImpl ?? fetch)(input.tokenUrl ?? defaultTokenUrl(input.kind, input.tenant), {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body,
+  });
+  let payload: TokenPayload;
+  try {
+    payload = (await response.json()) as TokenPayload;
+  } catch {
+    throw new ReauthRequiredError(`token endpoint returned HTTP ${response.status}`);
+  }
+  try {
+    return tokenFromPayload(payload, response.ok, response.status, input.kind, input.refreshToken, "Token endpoint refused the refresh", input.now);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message.replace(/^Token endpoint refused the refresh \(/, "").replace(/\)$/, "") : "refresh failed";
+    throw new ReauthRequiredError(cleanReason(reason));
+  }
+}
+
+interface TokenPayload {
+  access_token?: unknown;
+  refresh_token?: unknown;
+  token_type?: unknown;
+  scope?: unknown;
+  expires_in?: unknown;
+  id_token?: unknown;
+  error?: unknown;
+  error_description?: unknown;
+}
+
+function tokenFromPayload(
+  payload: TokenPayload,
+  ok: boolean,
+  status: number,
+  kind: AuthKind,
+  previousRefresh: string | null,
+  failurePrefix: string,
+  now = new Date(),
+): StoredToken {
+  if (!ok || typeof payload.access_token !== "string") {
+    const detail = typeof payload.error_description === "string" ? payload.error_description : typeof payload.error === "string" ? payload.error : `HTTP ${status}`;
+    throw new Error(`${failurePrefix} (${cleanReason(detail)})`);
   }
   const expiresIn = typeof payload.expires_in === "number" ? payload.expires_in : null;
-  return {
+  const refresh = typeof payload.refresh_token === "string" ? payload.refresh_token : previousRefresh;
+  const token: StoredToken = {
     access_token: payload.access_token,
-    refresh_token: typeof payload.refresh_token === "string" ? payload.refresh_token : null,
+    refresh_token: refresh,
     token_type: typeof payload.token_type === "string" ? payload.token_type : "Bearer",
-    scope: typeof payload.scope === "string" ? payload.scope : scopesFor(input.kind).join(" "),
-    expires_at: expiresIn === null ? null : new Date(Date.now() + expiresIn * 1000).toISOString(),
+    scope: typeof payload.scope === "string" ? payload.scope : scopesFor(kind).join(" "),
+    expires_at: expiresIn === null ? null : new Date(now.getTime() + expiresIn * 1000).toISOString(),
   };
+  if (typeof payload.id_token === "string") token.id_token = payload.id_token;
+  return token;
+}
+
+function cleanReason(reason: string): string {
+  return reason.replace(/\s+/g, " ").trim().slice(0, 240);
 }
 
 export function writeToken(path: string, token: StoredToken): void {
@@ -124,7 +212,7 @@ export function writeToken(path: string, token: StoredToken): void {
  * Installed-app loopback: bind 127.0.0.1, print the authorize URL, exchange the
  * code, and store the token under the data directory. Read-only scopes only.
  */
-export async function runInstalledAppFlow(options: AuthFlowOptions): Promise<{ path: string; authorizeUrl: string }> {
+export async function runInstalledAppFlow(options: AuthFlowOptions): Promise<{ path: string; authorizeUrl: string; token: StoredToken }> {
   const verifier = randomBytes(32).toString("base64url");
   const state = randomBytes(16).toString("base64url");
   const challenge = codeChallenge(verifier);
@@ -196,9 +284,20 @@ export async function runInstalledAppFlow(options: AuthFlowOptions): Promise<{ p
     tenant: options.tenant,
     fetchImpl: options.fetchImpl,
   });
-  writeToken(options.tokenPath, token);
+  const path = options.tokenPath ?? "";
+  if (!options.skipWrite) {
+    if (!path) throw new Error("tokenPath is required to store a token");
+    writeToken(path, {
+      access_token: token.access_token,
+      refresh_token: token.refresh_token,
+      token_type: token.token_type,
+      scope: token.scope,
+      expires_at: token.expires_at,
+    });
+  }
   return {
-    path: options.tokenPath,
+    path,
+    token,
     authorizeUrl: buildAuthorizeUrl({
       kind: options.kind,
       clientId: options.clientId,
