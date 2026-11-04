@@ -22,11 +22,16 @@ test("demo household is two students, three sources, and at least twelve assignm
   assert.equal(board.counts.assignments >= 12, true);
   assert.equal(board.counts.assignments, 17);
   assert.deepEqual(
-    board.sources.map((source) => source.source),
-    ["powerschool", "google-classroom", "onenote"],
+    board.sources.map((source) => `${source.source}|${source.state}|${source.text.split(" · ")[1]}`),
+    [
+      "powerschool|fresh|Student A",
+      "powerschool|stale|Student B",
+      "google-classroom|fresh|Student A",
+      "google-classroom|stale|Student B",
+      "onenote|stale|Student A",
+      "onenote|stale|Student B",
+    ],
   );
-  assert.equal(board.sources.find((source) => source.source === "onenote")?.state, "stale");
-  assert.equal(board.sources.find((source) => source.source === "powerschool")?.state, "fresh");
   assert.equal(board.tonight.headline.join(" · "), "2 missing · 1 late · 3 due tonight");
   assert.match(board.tonight.detail, /Oldest is Lab report/);
   const summaries = board.changes.map((change) => change.summary);

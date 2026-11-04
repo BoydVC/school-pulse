@@ -8,8 +8,8 @@ import { fetchOneNoteSnapshot } from "../faithful/fetch/onenote.js";
 import { ingestSnapshot, type IngestResult } from "../ingest/ingest.js";
 import {
   ensureFreshAccount,
-  listAccountsFor,
   markReauth,
+  readAccountStore,
   sourceForKind,
   tokenFilePath,
   upsertAccount,
@@ -85,7 +85,11 @@ async function syncKind(input: {
   const source = sourceForKind(input.kind);
   let accounts: AccountToken[];
   try {
-    accounts = listAccountsFor(input.dataDir, input.kind);
+    const store = readAccountStore(path);
+    for (const key of store.skipped ?? []) input.result.messages.push(`${label}: skipped unreadable account ${key}`);
+    accounts = Object.values(store.accounts).sort(
+      (a, b) => a.studentId.localeCompare(b.studentId) || a.accountKey.localeCompare(b.accountKey),
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "could not read tokens";
     input.result.messages.push(`${label}: ${message}`);
@@ -94,15 +98,22 @@ async function syncKind(input: {
   let used = false;
   for (const account of accounts) {
     used = true;
-    let current = await ensureFreshAccount({
-      account,
-      kind: input.kind,
-      clientId: input.clientId,
-      clientSecret: input.clientSecret,
-      tenant: input.tenant,
-      fetchImpl: input.fetchImpl,
-      now: input.now,
-    });
+    let current: AccountToken;
+    try {
+      current = await ensureFreshAccount({
+        account,
+        kind: input.kind,
+        clientId: input.clientId,
+        clientSecret: input.clientSecret,
+        tenant: input.tenant,
+        fetchImpl: input.fetchImpl,
+        now: input.now,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "refresh failed";
+      input.result.messages.push(`${label} ${account.studentId}: will retry (${message})`);
+      continue;
+    }
     if (changed(account, current)) upsertAccount(path, current);
     if (current.reauth_needed) {
       input.result.messages.push(`${label} ${current.studentId}: re-auth needed (${current.reauth_reason ?? "refresh failed"})`);

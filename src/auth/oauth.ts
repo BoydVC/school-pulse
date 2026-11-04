@@ -148,18 +148,21 @@ export async function refreshAccessToken(input: {
     headers: { "content-type": "application/x-www-form-urlencoded" },
     body,
   });
-  let payload: TokenPayload;
+  if (response.status === 408 || response.status === 429 || response.status >= 500) {
+    throw new Error(`token endpoint returned HTTP ${response.status}`);
+  }
+  let payload: TokenPayload = {};
   try {
     payload = (await response.json()) as TokenPayload;
   } catch {
-    throw new ReauthRequiredError(`token endpoint returned HTTP ${response.status}`);
+    if (response.status === 401) throw new ReauthRequiredError(`token endpoint returned HTTP ${response.status}`);
+    throw new Error(`token endpoint returned HTTP ${response.status}`);
   }
-  try {
-    return tokenFromPayload(payload, response.ok, response.status, input.kind, input.refreshToken, "Token endpoint refused the refresh", input.now);
-  } catch (error) {
-    const reason = error instanceof Error ? error.message.replace(/^Token endpoint refused the refresh \(/, "").replace(/\)$/, "") : "refresh failed";
-    throw new ReauthRequiredError(cleanReason(reason));
+  if (response.status === 401 || payload.error === "invalid_grant") {
+    const detail = typeof payload.error_description === "string" ? payload.error_description : typeof payload.error === "string" ? payload.error : `HTTP ${response.status}`;
+    throw new ReauthRequiredError(cleanReason(detail));
   }
+  return tokenFromPayload(payload, response.ok, response.status, input.kind, input.refreshToken, "Token endpoint refused the refresh", input.now);
 }
 
 interface TokenPayload {

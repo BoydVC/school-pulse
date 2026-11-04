@@ -21,7 +21,7 @@ import { startWatcher } from "../src/ingest/watch.js";
 import { startServer } from "../src/server/server.js";
 import { endOfDay } from "../src/model/dates.js";
 import { listAssignments, openDatabase } from "../src/store/db.js";
-import { zonedTimeToUtc } from "../src/time/zone.js";
+import { civilDate, zonedTimeToUtc } from "../src/time/zone.js";
 import type { DatabaseSync } from "node:sqlite";
 import { attachLiveStream, shouldRefreshOnVisibility } from "../web/live.js";
 
@@ -441,7 +441,7 @@ test("one bad token entry does not hide the other students", async () => {
         access_token: "access-a",
         expires_at: new Date(NOW.getTime() + 3_600_000).toISOString(),
       }),
-      broken: { accountKey: "student.b@example.com", studentId: "../../.." },
+      broken: { accountKey: "student.b@example.com", studentId: "../../..", access_token: "access-b", refresh_token: "refresh-b" },
     },
   }, null, 2)}\n`);
   const stored = listAccounts(path);
@@ -504,13 +504,13 @@ test("month-day, weekday, and yearless dates keep a due date", () => {
       { sourceId: "weekday", studentSourceId: "kid-1", courseSourceId: "sci", title: "Weekday Lab", status: "assigned", due: "Monday" },
     ],
   });
-  const dueOf = (title: string) => snapshot.assignments.find((item) => item.title === title)?.due;
-  assert.equal(dueOf("Slash Day")?.startsWith("2026-11-02"), true);
-  assert.equal(dueOf("Named Day")?.startsWith("2026-11-02"), true);
-  assert.equal(dueOf("Weekday Lab")?.startsWith("2026-11-09"), true);
+  const dueOf = (title: string) => snapshot.assignments.find((item) => item.title === title)?.due ?? "";
+  assert.equal(civilDate(new Date(dueOf("Slash Day"))), "2026-11-02");
+  assert.equal(civilDate(new Date(dueOf("Named Day"))), "2026-11-02");
+  assert.equal(civilDate(new Date(dueOf("Weekday Lab"))), "2026-11-09");
   const board = buildDashboard(db, NOW);
   assert.equal(board.week.overdue.some((item) => item.title === "Slash Day"), true);
-  assert.equal(board.week.days.some((day) => day.items.some((item) => item.title === "Weekday Lab")), true);
+  assert.equal(board.week.overdue.some((item) => item.title === "Named Day"), true);
 });
 
 test("a due time in the last minute of the household day still counts as tonight", () => {

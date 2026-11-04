@@ -25,6 +25,9 @@ test("the local API serves the household, ingest, and alerts", async () => {
 
     const page = await fetch(server.url);
     assert.match(await page.text(), /School Pulse/);
+    const liveScript = await fetch(`${server.url}/live.js`);
+    assert.equal(liveScript.status, 200);
+    assert.match(await liveScript.text(), /attachLiveStream/);
 
     const created = (await fetch(`${server.url}/api/alerts/rules`, {
       method: "PUT",

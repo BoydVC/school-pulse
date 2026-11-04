@@ -36,6 +36,7 @@ export interface AccountToken {
 export interface AccountStore {
   version: 2;
   accounts: Record<string, AccountToken>;
+  skipped?: string[];
 }
 
 export interface ReauthNotice {
@@ -127,12 +128,16 @@ export function readAccountStore(path: string): AccountStore {
   const parsed = JSON.parse(readFileSync(path, "utf8")) as unknown;
   if (isStore(parsed)) {
     const accounts: Record<string, AccountToken> = {};
+    const skipped: string[] = [];
     for (const [key, value] of Object.entries(parsed.accounts)) {
       const account = parseAccount(value);
-      if (!account) throw new Error(`Token file ${path} has an unreadable account "${key}"`);
+      if (!account) {
+        skipped.push(key);
+        continue;
+      }
       accounts[account.accountKey] = account;
     }
-    return { version: 2, accounts };
+    return { version: 2, accounts, skipped };
   }
   if (isLegacyToken(parsed)) {
     const account = legacyAccount(parsed);
@@ -249,27 +254,31 @@ export async function ensureFreshAccount(input: {
     const variable = input.kind === "classroom" ? "SCHOOL_PULSE_GOOGLE_CLIENT_ID" : "SCHOOL_PULSE_GRAPH_CLIENT_ID";
     return markReauth(input.account, `set ${variable} so the refresh token can be used`, now);
   }
-  try {
-    const token = await refreshAccessToken({
-      kind: input.kind,
-      clientId: input.clientId,
-      clientSecret: input.clientSecret,
-      refreshToken: input.account.refresh_token,
-      scope: input.kind === "onenote" ? scopesFor("onenote").join(" ") : input.account.scope,
-      tokenUrl: input.tokenUrl,
-      tenant: input.tenant,
-      fetchImpl: input.fetchImpl,
-      now,
-    });
-    return applyRefreshed(input.account, token, now);
-  } catch (error) {
-    const reason = error instanceof ReauthRequiredError
-      ? error.reason
-      : error instanceof Error
-        ? error.message
-        : "refresh failed";
-    return markReauth(input.account, reason, now);
+  const backoffMs = [20, 40, 80];
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= backoffMs.length; attempt += 1) {
+    try {
+      const token = await refreshAccessToken({
+        kind: input.kind,
+        clientId: input.clientId,
+        clientSecret: input.clientSecret,
+        refreshToken: input.account.refresh_token,
+        scope: input.kind === "onenote" ? scopesFor("onenote").join(" ") : input.account.scope,
+        tokenUrl: input.tokenUrl,
+        tenant: input.tenant,
+        fetchImpl: input.fetchImpl,
+        now,
+      });
+      return applyRefreshed(input.account, token, now);
+    } catch (error) {
+      if (error instanceof ReauthRequiredError) return markReauth(input.account, error.reason, now);
+      lastError = error;
+      const wait = backoffMs[attempt];
+      if (wait === undefined) break;
+      await new Promise((resolve) => setTimeout(resolve, wait));
+    }
   }
+  throw lastError instanceof Error ? lastError : new Error("refresh failed");
 }
 
 export async function signInAccount(options: AuthFlowOptions & {
@@ -288,6 +297,10 @@ export async function signInAccount(options: AuthFlowOptions & {
     profileUrl: options.profileUrl,
   });
   const account = toAccount(identity, studentId, flow.token);
+  const existing = readAccountStore(options.storePath).accounts[account.accountKey];
+  if (existing && existing.studentId !== studentId && !options.reassign) {
+    throw new Error(`Account ${identity.email ?? identity.accountKey} is already signed in for student ${existing.studentId}. Pass --reassign to move it.`);
+  }
   upsertAccount(options.storePath, account);
   return account;
 }
@@ -359,11 +372,17 @@ function parseAccount(value: unknown): AccountToken | null {
   if (!value || typeof value !== "object") return null;
   const record = value as Record<string, unknown>;
   if (typeof record.access_token !== "string" || typeof record.accountKey !== "string" || typeof record.studentId !== "string") return null;
+  let studentId: string;
+  try {
+    studentId = assertStudentId(record.studentId);
+  } catch {
+    return null;
+  }
   return {
     accountKey: record.accountKey,
     email: typeof record.email === "string" ? record.email : null,
     accountId: typeof record.accountId === "string" ? record.accountId : null,
-    studentId: record.studentId,
+    studentId,
     access_token: record.access_token,
     refresh_token: typeof record.refresh_token === "string" ? record.refresh_token : null,
     token_type: typeof record.token_type === "string" ? record.token_type : "Bearer",

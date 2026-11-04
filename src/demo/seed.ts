@@ -255,8 +255,16 @@ function buildStory(now: Date): {
       students: [{ userId: "stu-a", school: "Pinecrest Middle", gradeLevel: "7", profile: { name: { fullName: "Student A" } } }],
       teachers: [{ courseId: "course-eng-a", profile: { name: { fullName: "Teacher C" } } }],
       courses: [{ id: "course-eng-a", name: "English", section: "Period 3", courseState: "ACTIVE" }],
-      courseWork: [essayWork],
-      studentSubmissions: [submission("course-eng-a", "cw-essay", "sub-essay", "stu-a", "TURNED_IN")],
+      courseWork: [
+        essayWork,
+        work("course-eng-a", "cw-log", "Reading log", 10, at(now, 0), "https://classroom.example.test/c/course-eng-a/a/cw-log"),
+        work("course-eng-a", "cw-vocab", "Vocabulary set", 20, at(now, friday), "https://classroom.example.test/c/course-eng-a/a/cw-vocab"),
+      ],
+      studentSubmissions: [
+        submission("course-eng-a", "cw-essay", "sub-essay", "stu-a", "TURNED_IN"),
+        submission("course-eng-a", "cw-log", "sub-log", "stu-a", "CREATED"),
+        submission("course-eng-a", "cw-vocab", "sub-vocab", "stu-a", "CREATED"),
+      ],
     },
     onenote: {
       fetchedAt: ago(now, 3 * 24 * 60),

@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, statSync, watch, type FSWatcher } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, statSync, watch, type FSWatcher } from "node:fs";
 import { basename, join } from "node:path";
 import { KNOWN_SOURCES, parseSnapshot, sourceFromInboxPath } from "../adapters/index.js";
 import { deliverWebhooks } from "../alerts/alerts.js";
@@ -31,6 +31,16 @@ export function startWatcher(options: {
     });
   } catch (error) {
     throw new Error(`Could not watch ${inbox}: ${error instanceof Error ? error.message : "unknown"}`);
+  }
+  for (const source of KNOWN_SOURCES) {
+    const dir = join(inbox, source);
+    let names: string[] = [];
+    try {
+      names = readdirSync(dir);
+    } catch {
+      continue;
+    }
+    for (const name of names) void ingestFile(options.db, join(dir, name), options.onResult);
   }
   return {
     close() {

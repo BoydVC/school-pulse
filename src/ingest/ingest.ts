@@ -24,6 +24,7 @@ import {
   insertStudent,
   latestGrade,
   listAssignments,
+  upsertSourceRun,
   transaction,
   updateAssignment,
   updateCourse,
@@ -62,9 +63,25 @@ export function ingestSnapshot(db: DatabaseSync, snapshot: NormalizedSnapshot, n
   return transaction(db, () => applySnapshot(db, snapshot, now));
 }
 
+const FUTURE_SKEW_MS = 5 * 60 * 1000;
+
+function normalizeFetchedAt(raw: string | undefined, now: Date): string {
+  const parsed = raw ? new Date(raw) : new Date(Number.NaN);
+  if (Number.isNaN(parsed.getTime())) return now.toISOString();
+  if (parsed.getTime() > now.getTime() + FUTURE_SKEW_MS) return now.toISOString();
+  return parsed.toISOString();
+}
+
+function earlierInstant(left: string, right: string): boolean {
+  const a = Date.parse(left);
+  const b = Date.parse(right);
+  if (Number.isNaN(a) || Number.isNaN(b)) return false;
+  return a < b;
+}
+
 function applySnapshot(db: DatabaseSync, incoming: NormalizedSnapshot, now: Date): IngestResult {
   const snapshot = enforceSnapshot(incoming);
-  const fetchedAt = snapshot.fetchedAt || now.toISOString();
+  const fetchedAt = normalizeFetchedAt(snapshot.fetchedAt, now);
   const rejected = snapshot.rejected ?? [];
   for (const row of rejected) console.error(`Rejected row ${row.index}: ${row.reason}`);
   const result: IngestResult = {
@@ -99,10 +116,16 @@ function applySnapshot(db: DatabaseSync, incoming: NormalizedSnapshot, now: Date
   }
 
   const newAssignments: Assignment[] = [];
+  const preexisting = new Set<string>();
+  for (const incoming of snapshot.assignments) {
+    const existing = getAssignmentBySource(db, snapshot.source, incoming.sourceId);
+    if (existing?.groupKey) preexisting.add(`${existing.groupKey}\0${incoming.sourceId}`);
+  }
   for (const incoming of snapshot.assignments) {
     const student = requireStudent(students, incoming.studentSourceId);
     const course = requireCourse(courses, incoming.studentSourceId, incoming.courseSourceId);
     const existing = getAssignmentBySource(db, snapshot.source, incoming.sourceId);
+    if (existing && earlierInstant(fetchedAt, existing.fetchedAt)) continue;
     if (existing?.removed) {
       updateAssignment(db, {
         ...existing,
@@ -230,21 +253,21 @@ function applySnapshot(db: DatabaseSync, incoming: NormalizedSnapshot, now: Date
     result.assignmentsUpdated += 1;
   }
 
-  if (snapshot.source === "onenote") {
-    for (const removed of removedFromGroups(db, snapshot)) {
-      updateAssignment(db, { ...removed, removed: true, lastSeen: fetchedAt, fetchedAt });
-      drafts.push({
-        studentId: removed.studentId,
-        courseId: removed.courseId,
-        assignmentId: removed.id,
-        kind: "assignment_removed",
-        summary: `Removed: ${removed.title}`,
-        before: removed.title,
-        after: null,
-      });
-      result.assignmentsUpdated += 1;
-    }
+  for (const removed of removedFromGroups(db, snapshot, fetchedAt, preexisting)) {
+    updateAssignment(db, { ...removed, removed: true, lastSeen: fetchedAt, fetchedAt });
+    drafts.push({
+      studentId: removed.studentId,
+      courseId: removed.courseId,
+      assignmentId: removed.id,
+      kind: "assignment_removed",
+      summary: `Removed: ${removed.title}`,
+      before: removed.title,
+      after: null,
+    });
+    result.assignmentsUpdated += 1;
   }
+
+  for (const student of students.values()) upsertSourceRun(db, snapshot.source, student.id, fetchedAt);
 
   const fresh = newAssignments.filter((assignment) => !established.has(assignment.studentId));
   const familiar = newAssignments.filter((assignment) => established.has(assignment.studentId));
@@ -432,7 +455,7 @@ function upsertCourse(
   return next;
 }
 
-function removedFromGroups(db: DatabaseSync, snapshot: NormalizedSnapshot): Assignment[] {
+function removedFromGroups(db: DatabaseSync, snapshot: NormalizedSnapshot, fetchedAt: string, preexisting: Set<string>): Assignment[] {
   if (snapshot.replaceGroups.length === 0) return [];
   const groups = new Set(snapshot.replaceGroups);
   const seen = new Set(snapshot.assignments.map((assignment) => assignment.sourceId));
@@ -440,8 +463,16 @@ function removedFromGroups(db: DatabaseSync, snapshot: NormalizedSnapshot): Assi
     if (assignment.source !== snapshot.source || assignment.removed) return false;
     if (!assignment.groupKey || !groups.has(assignment.groupKey)) return false;
     if (seen.has(assignment.sourceId)) return false;
-    return assignment.fetchedAt <= snapshot.fetchedAt;
+    if (snapshot.source === "generic" && !restatesGroup(snapshot, preexisting, assignment.groupKey)) return false;
+    const seenAt = Date.parse(assignment.fetchedAt);
+    const snapAt = Date.parse(fetchedAt);
+    if (Number.isNaN(seenAt) || Number.isNaN(snapAt)) return false;
+    return seenAt <= snapAt;
   });
+}
+
+function restatesGroup(snapshot: NormalizedSnapshot, preexisting: Set<string>, groupKey: string): boolean {
+  return snapshot.assignments.some((assignment) => assignment.groupKey === groupKey && preexisting.has(`${groupKey}\0${assignment.sourceId}`));
 }
 
 function sameAssignment(existing: Assignment, incoming: NormalizedAssignment, courseId: string): boolean {

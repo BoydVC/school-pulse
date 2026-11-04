@@ -95,8 +95,9 @@ export function zonedTimeToUtc(
 export function endOfCivilDate(isoDay: string, timeZone = activeTimezone()): Date {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDay);
   if (!match?.[1] || !match[2] || !match[3]) throw new Error(`Not a civil date: ${isoDay}`);
-  return zonedTimeToUtc(
-    { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]), hour: 23, minute: 59, second: 0 },
+  const end = zonedTimeToUtc(
+    { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]), hour: 23, minute: 59, second: 59 },
     timeZone,
   );
+  return new Date(end.getTime() + 999);
 }

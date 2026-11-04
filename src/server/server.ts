@@ -1,6 +1,6 @@
 import { createReadStream, existsSync } from "node:fs";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
-import { basename, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { parseSnapshot } from "../adapters/index.js";
 import { deliverWebhooks, readAlerts, saveRules, setWebhook } from "../alerts/alerts.js";
@@ -59,7 +59,7 @@ export async function startServer(options: {
       return;
     }
     if (method === "PUT" && url.pathname === "/api/alerts/rules") {
-      const body = JSON.parse(await readBody(req)) as { rules?: unknown };
+      const body = readJson(await readBody(req)) as { rules?: unknown };
       if (!Array.isArray(body.rules)) throw badRequest("Expected { rules: [] }");
       const rules = body.rules.map((rule) => parseRule(rule));
       saveRules(options.db, rules, new Date());
@@ -68,15 +68,20 @@ export async function startServer(options: {
       return;
     }
     if (method === "PUT" && url.pathname === "/api/alerts/webhook") {
-      const body = JSON.parse(await readBody(req)) as { url?: unknown };
+      const body = readJson(await readBody(req)) as { url?: unknown };
       const webhook = body.url == null || body.url === "" ? null : body.url;
       if (webhook != null && typeof webhook !== "string") throw badRequest("Webhook url must be a string.");
-      setWebhook(options.db, webhook);
+      try {
+        setWebhook(options.db, webhook);
+      } catch (error) {
+        throw badRequest(error instanceof Error ? error.message : "Webhook URL must be http or https.");
+      }
       sendJson(res, 200, { ok: true, webhook });
       return;
     }
     if (method === "POST" && url.pathname === "/api/ingest") {
       const rawBody = await readBody(req);
+      if (!rawBody.trim()) throw badRequest("Request body is empty");
       const payload = readIngestPayload(url, req.headers["content-type"] ?? "", rawBody);
       const now = new Date();
       let snapshot;
@@ -85,7 +90,12 @@ export async function startServer(options: {
       } catch (error) {
         throw badRequest(error instanceof Error ? error.message : "Could not read snapshot");
       }
-      const result = ingestSnapshot(options.db, snapshot, now);
+      let result;
+      try {
+        result = ingestSnapshot(options.db, snapshot, now);
+      } catch (error) {
+        throw badRequest(error instanceof Error ? error.message : "Could not import snapshot");
+      }
       await deliverWebhooks(options.db, result.alerts).catch((error: unknown) => {
         console.error(`school-pulse: webhook failed: ${error instanceof Error ? error.message : "unknown"}`);
       });
@@ -158,6 +168,10 @@ function closeServer(server: Server, heartbeats: Set<NodeJS.Timeout>): Promise<v
 async function serveStatic(res: ServerResponse, pathname: string, web: string, appJs: string): Promise<void> {
   if (pathname === "/app.js") {
     await sendFile(res, appJs, "text/javascript; charset=utf-8");
+    return;
+  }
+  if (pathname === "/live.js") {
+    await sendFile(res, join(dirname(appJs), "live.js"), "text/javascript; charset=utf-8");
     return;
   }
   if (pathname === "/styles.css") {
@@ -233,7 +247,7 @@ export function readIngestPayload(url: URL, contentType: string, body: string): 
         };
       }
     } catch {
-      // The body itself is the snapshot.
+      return { source: null, filename, raw: body };
     }
   }
   return { source: null, filename, raw: body };
@@ -258,6 +272,14 @@ function safeReauth(dataDir: string): ReturnType<typeof reauthNotices> {
     return reauthNotices(dataDir);
   } catch {
     return [];
+  }
+}
+
+function readJson(body: string): unknown {
+  try {
+    return JSON.parse(body) as unknown;
+  } catch {
+    throw badRequest("Expected JSON");
   }
 }
 

@@ -111,6 +111,12 @@ CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS source_runs (
+  source TEXT NOT NULL,
+  student_id TEXT NOT NULL,
+  fetched_at TEXT NOT NULL,
+  PRIMARY KEY (source, student_id)
+);
 CREATE INDEX IF NOT EXISTS idx_assignments_due ON assignments(due);
 CREATE INDEX IF NOT EXISTS idx_grades_course ON grade_snapshots(course_id, as_of);
 CREATE INDEX IF NOT EXISTS idx_changes_created ON changes(created_at);
@@ -288,6 +294,29 @@ export function updateStudent(db: DatabaseSync, student: Student): void {
 
 export function listStudents(db: DatabaseSync): Student[] {
   return db.prepare("SELECT * FROM students ORDER BY name, source").all().map(mapStudent);
+}
+
+export interface SourceRun {
+  source: string;
+  studentId: string;
+  fetchedAt: string;
+}
+
+export function listSourceRuns(db: DatabaseSync): SourceRun[] {
+  return db.prepare("SELECT source, student_id, fetched_at FROM source_runs").all().map((row) => ({
+    source: text(row, "source"),
+    studentId: text(row, "student_id"),
+    fetchedAt: text(row, "fetched_at"),
+  }));
+}
+
+export function upsertSourceRun(db: DatabaseSync, source: string, studentId: string, fetchedAt: string): void {
+  db.prepare(
+    `INSERT INTO source_runs (source, student_id, fetched_at)
+     VALUES (?, ?, ?)
+     ON CONFLICT(source, student_id) DO UPDATE SET fetched_at = excluded.fetched_at
+     WHERE excluded.fetched_at >= source_runs.fetched_at`,
+  ).run(source, studentId, fetchedAt);
 }
 
 export function getCourseBySource(db: DatabaseSync, source: string, sourceId: string): Course | null {
