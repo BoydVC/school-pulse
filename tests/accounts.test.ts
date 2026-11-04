@@ -467,8 +467,7 @@ test("sync walks every Classroom and OneNote account and flags a failed refresh"
   assert.equal(failed?.access_token, "access-c");
 
   const board = buildDashboard(db, NOW, { reauth: reauthNotices(directory) });
-  const badge = board.sources.find((source) => source.source === "google-classroom");
-  assert.equal(badge?.state, "reauth");
+  const badge = board.sources.find((source) => source.state === "reauth");
   assert.equal(badge?.text, "Classroom · stu-c · re-auth needed");
 });
 

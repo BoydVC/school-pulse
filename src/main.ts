@@ -28,6 +28,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       data: { type: "string" },
       source: { type: "string" },
       student: { type: "string" },
+      reassign: { type: "boolean" },
       help: { type: "boolean", short: "h" },
     },
     allowPositionals: true,
@@ -39,7 +40,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   }
   const dataDir = resolveDataDir(values.data);
   if (command === "auth") {
-    await runAuth(positionals[1], dataDir, values.student);
+    await runAuth(positionals[1], dataDir, values.student, values.reassign === true);
     return;
   }
   const db = openDatabase(resolve(dataDir, "school-pulse.sqlite"));
@@ -131,7 +132,7 @@ async function runSync(dataDir: string, db: ReturnType<typeof openDatabase>): Pr
   for (const message of result.messages) console.log(message);
 }
 
-async function runAuth(kind: string | undefined, dataDir: string, student: string | undefined): Promise<void> {
+async function runAuth(kind: string | undefined, dataDir: string, student: string | undefined, reassign = false): Promise<void> {
   if (kind === "status") {
     console.log(formatAuthStatus({
       classroom: listAccountsFor(dataDir, "classroom"),
@@ -158,6 +159,7 @@ async function runAuth(kind: string | undefined, dataDir: string, student: strin
     clientSecret: clientSecret || null,
     studentId,
     storePath,
+    reassign,
     tenant: process.env.SCHOOL_PULSE_GRAPH_TENANT,
     onAuthorizeUrl: (url) => console.log(url),
   });
@@ -172,8 +174,8 @@ Usage
   school-pulse demo [--port 4173] [--data ./data]
   school-pulse serve [--port 4173] [--host 127.0.0.1] [--data ./data]
   school-pulse ingest <file> [--source powerschool|onenote|google-classroom|generic] [--data ./data]
-  school-pulse auth classroom --student <id>
-  school-pulse auth onenote --student <id>
+  school-pulse auth classroom --student <id> [--reassign]
+  school-pulse auth onenote --student <id> [--reassign]
   school-pulse auth status
   school-pulse sync [--data ./data]
 

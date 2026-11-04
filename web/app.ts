@@ -1,3 +1,5 @@
+import { attachLiveStream, shouldRefreshOnVisibility } from "./live.js";
+
 interface AttentionItem {
   id: string;
   studentKey: string;
@@ -99,6 +101,9 @@ if (app) {
   connect();
   window.setInterval(() => void refresh(), 60_000);
   window.setInterval(tickClock, 30_000);
+  document.addEventListener("visibilitychange", () => {
+    if (shouldRefreshOnVisibility(document.visibilityState)) void refresh();
+  });
 }
 
 window.addEventListener("hashchange", () => render());
@@ -469,14 +474,15 @@ function connect(): void {
     const pulse = JSON.parse((event as MessageEvent).data) as Pulse;
     void refresh(pulse);
   });
-  events.onopen = () => {
-    connected = true;
-    document.querySelector(".live-pill")?.setAttribute("data-state", "on");
-  };
-  events.onerror = () => {
-    connected = false;
-    document.querySelector(".live-pill")?.setAttribute("data-state", "off");
-  };
+  attachLiveStream(events, {
+    refresh: () => {
+      void refresh();
+    },
+    setConnected: (on) => {
+      connected = on;
+      document.querySelector(".live-pill")?.setAttribute("data-state", on ? "on" : "off");
+    },
+  });
 }
 
 function toggleTheme(): void {

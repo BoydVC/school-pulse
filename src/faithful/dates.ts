@@ -149,6 +149,11 @@ export function parseLooseDate(raw: string | null | undefined, refIso?: string |
     return ymd(year, Number(mdy[1]), Number(mdy[2]));
   }
 
+  const monthDaySlash = /^(\d{1,2})\/(\d{1,2})$/.exec(text);
+  if (monthDaySlash && refIso) {
+    return ymd(Number(refIso.slice(0, 4)), Number(monthDaySlash[1]), Number(monthDaySlash[2]));
+  }
+
   const long = /([A-Za-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?(?:,)?\s*(\d{4})/.exec(text);
   if (long) {
     const month = MONTHS[long[1]!.toLowerCase()];

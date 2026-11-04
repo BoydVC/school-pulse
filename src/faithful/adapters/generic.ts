@@ -49,7 +49,6 @@ interface GenericFile {
   }[];
 }
 
-/** JSON or CSV shaped like the core model, for scripts that already normalized a source. */
 export function parseGeneric(input: string, options?: { now?: string }): ParsedBatch {
   const trimmed = input.trim();
   if (!trimmed) throw new AdapterError('Generic feed is empty', 'generic');
@@ -58,11 +57,18 @@ export function parseGeneric(input: string, options?: { now?: string }): ParsedB
 }
 
 
-function calendarOrInstant(raw: string | null | undefined): string | null {
+function calendarOrInstant(raw: string | null | undefined, refIso: string): string | null {
   if (!raw) return null;
   const text = raw.trim();
   if (/^\d{4}-\d{2}-\d{2}T/.test(text)) return text;
-  return parseLooseDate(text);
+  return parseLooseDate(text, refIso);
+}
+
+function resolveStudent(ref: string | undefined, byName: Map<string, string>, bySource: Map<string, string>): string {
+  const text = collapse(ref);
+  if (!text) return "";
+  const key = text.toLowerCase();
+  return bySource.get(key) || byName.get(key) || "";
 }
 
 function expectArray<T>(value: T[] | undefined, label: string): T[] {
@@ -93,13 +99,21 @@ function parseJson(input: string, options?: { now?: string }): ParsedBatch {
     };
   });
   const byName = new Map(students.map((student) => [student.name.toLowerCase(), student.sourceId]));
-  const courses = courseRows.map((course) => {
+  const bySource = new Map(students.map((student) => [student.sourceId.toLowerCase(), student.sourceId]));
+  const rejected: { index: number; reason: string }[] = [];
+  const courses = courseRows.flatMap((course, index) => {
     const name = collapse(course.name);
-    if (!name) throw new AdapterError('Generic course is missing a name', 'generic');
-    const studentSourceId = course.studentSourceId || byName.get(collapse(course.student).toLowerCase()) || '';
-    if (!studentSourceId) throw new AdapterError(`Generic course ${name} does not name a student`, 'generic');
-    return {
-      sourceId: course.sourceId || `generic:${slug(name)}`,
+    if (!name) {
+      rejected.push({ index, reason: "Generic course is missing a name" });
+      return [];
+    }
+    const studentSourceId = resolveStudent(course.studentSourceId, byName, bySource) || resolveStudent(course.student, byName, bySource);
+    if (!studentSourceId) {
+      rejected.push({ index, reason: `Generic course ${name} does not name a student` });
+      return [];
+    }
+    return [{
+      sourceId: course.sourceId || `generic:${slug(studentSourceId)}:${slug(name)}`,
       studentSourceId,
       name,
       teacher: course.teacher ?? null,
@@ -111,11 +125,10 @@ function parseJson(input: string, options?: { now?: string }): ParsedBatch {
         .map((category) => ({ name: category.name!, weight: Number(category.weight) })),
       percent: course.percent ?? null,
       letter: course.letter ?? null,
-    };
+    }];
   });
-  const courseByName = new Map(courses.map((course) => [course.name.toLowerCase(), course]));
+  const courseByStudentName = new Map(courses.map((course) => [`${course.studentSourceId}::${course.name.toLowerCase()}`, course]));
   const assignments: ParsedAssignment[] = [];
-  const rejected: { index: number; reason: string }[] = [];
   assignmentRows.forEach((assignment, index) => {
     const title = collapse(assignment.title);
     if (!title) {
@@ -127,31 +140,34 @@ function parseJson(input: string, options?: { now?: string }): ParsedBatch {
       rejected.push({ index, reason: `Unknown assignment status "${status}" on ${title}` });
       return;
     }
-    const course = courseByName.get(collapse(assignment.course).toLowerCase());
-    const studentSourceId = assignment.studentSourceId || course?.studentSourceId || byName.get(collapse(assignment.student).toLowerCase()) || "";
+    const studentSourceId = resolveStudent(assignment.studentSourceId, byName, bySource) || resolveStudent(assignment.student, byName, bySource);
     if (!studentSourceId) {
       rejected.push({ index, reason: `Generic assignment "${title}" does not name a student` });
       return;
     }
-    const courseSourceId = assignment.courseSourceId || course?.sourceId || `generic:${slug(assignment.course || title)}`;
-    const courseName = course?.name || collapse(assignment.course) || "Course";
+    const course = courseByStudentName.get(`${studentSourceId}::${collapse(assignment.course).toLowerCase()}`)
+      ?? courses.find((item) => item.sourceId === assignment.courseSourceId && item.studentSourceId === studentSourceId);
+    if (!course) {
+      rejected.push({ index, reason: `Generic assignment "${title}" does not name a course` });
+      return;
+    }
     assignments.push({
-      sourceId: assignment.sourceId || `generic:${slug(title)}`,
+      sourceId: assignment.sourceId || `generic:${slug(studentSourceId)}:${slug(title)}`,
       studentSourceId,
-      courseSourceId,
+      courseSourceId: course.sourceId,
       title,
-      courseName,
-      due: calendarOrInstant(assignment.due),
-      assigned: calendarOrInstant(assignment.assigned),
+      courseName: course.name,
+      due: calendarOrInstant(assignment.due, fetchedAt),
+      assigned: calendarOrInstant(assignment.assigned, fetchedAt),
       status: status as AssignmentStatus,
       pointsEarned: assignment.pointsEarned ?? null,
       pointsPossible: assignment.pointsPossible ?? null,
       category: assignment.category ?? null,
       categoryWeight: assignment.categoryWeight ?? null,
       url: assignment.url ?? null,
-      term: assignment.term ?? course?.term ?? null,
+      term: assignment.term ?? course.term ?? null,
       dropped: assignment.dropped === true,
-      groupKey: `generic:${courseSourceId}:${assignment.term ?? course?.term ?? "term"}`,
+      groupKey: `generic:${course.sourceId}:${assignment.term ?? course.term ?? "term"}`,
       rowIndex: index,
     });
   });
@@ -167,10 +183,14 @@ function parseJson(input: string, options?: { now?: string }): ParsedBatch {
       asOf: fetchedAt,
       current: true,
     }));
-  for (const grade of expectArray(file.grades, 'grades')) {
-    const course = courses.find((item) => item.sourceId === grade.courseSourceId) ?? courseByName.get(collapse(grade.course).toLowerCase());
-    const studentSourceId = grade.studentSourceId || course?.studentSourceId || byName.get(collapse(grade.student).toLowerCase()) || '';
-    if (!studentSourceId || !course) throw new AdapterError('Generic grade does not name a student and course', 'generic');
+  expectArray(file.grades, 'grades').forEach((grade, index) => {
+    const studentSourceId = resolveStudent(grade.studentSourceId, byName, bySource) || resolveStudent(grade.student, byName, bySource);
+    const course = (studentSourceId ? courseByStudentName.get(`${studentSourceId}::${collapse(grade.course).toLowerCase()}`) : undefined)
+      ?? courses.find((item) => item.sourceId === grade.courseSourceId && item.studentSourceId === studentSourceId);
+    if (!studentSourceId || !course) {
+      rejected.push({ index, reason: "Generic grade does not name a student and course" });
+      return;
+    }
     grades.push({
       studentSourceId,
       courseSourceId: course.sourceId,
@@ -181,12 +201,19 @@ function parseJson(input: string, options?: { now?: string }): ParsedBatch {
       asOf: grade.asOf || fetchedAt,
       current: true,
     });
-  }
+  });
+  const linked = new Set<string>([
+    ...courses.map((course) => course.studentSourceId),
+    ...assignments.map((assignment) => assignment.studentSourceId),
+    ...grades.map((grade) => grade.studentSourceId),
+  ]);
+  const fileHadRows = courseRows.length + assignmentRows.length + expectArray(file.grades, "grades").length > 0;
+  const keptStudents = fileHadRows ? students.filter((student) => linked.has(student.sourceId)) : students;
   const replaceGroups = [...new Set(assignments.map((assignment) => assignment.groupKey))];
   return {
     source: 'generic',
     fetchedAt,
-    students,
+    students: keptStudents,
     courses: courses.map((course) => ({
       sourceId: course.sourceId,
       studentSourceId: course.studentSourceId,

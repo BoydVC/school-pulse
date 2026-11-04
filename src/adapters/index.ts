@@ -27,8 +27,9 @@ export function parseSnapshot(input: {
       now: input.now.toISOString(),
       sourceHint: hinted && isSource(hinted) ? hinted : null,
     });
-    if (usableFaithful(batch)) return fromFaithful(batch, activeTimezone());
+    if (usableFaithful(batch) || (batch.source === "generic" && explicitlyGeneric(raw, hinted))) return fromFaithful(batch, activeTimezone());
   } catch (error) {
+    if (error instanceof AdapterError && explicitlyGeneric(raw, hinted)) throw error;
     if (error instanceof AdapterError && /missing the section frn/i.test(error.message) && !/frn=/i.test(raw)) {
       throw new Error("PowerSchool scores page is missing the section frn");
     }
@@ -46,6 +47,21 @@ export function parseSnapshot(input: {
     throw new Error("HTML fragment is not a saved school page");
   }
   return legacy;
+}
+
+function explicitlyGeneric(raw: string, hint: string | null): boolean {
+  if (hint === "generic") return true;
+  const text = raw.trim();
+  if (!text.startsWith("{") && !text.startsWith("[")) {
+    const header = text.split(/\r?\n/, 1)[0] ?? "";
+    return /^student\b/i.test(header) && /\bcourse\b/i.test(header);
+  }
+  try {
+    const json = JSON.parse(text) as { source?: unknown };
+    return json.source === "generic";
+  } catch {
+    return false;
+  }
 }
 
 function looksLikeHtml(raw: string): boolean {

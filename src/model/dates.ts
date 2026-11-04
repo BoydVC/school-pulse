@@ -7,7 +7,8 @@ export function startOfDay(date: Date, timeZone = activeTimezone()): Date {
 
 export function endOfDay(date: Date, timeZone = activeTimezone()): Date {
   const parts = zonedParts(date, timeZone);
-  return zonedTimeToUtc({ year: parts.year, month: parts.month, day: parts.day, hour: 23, minute: 59, second: 0 }, timeZone);
+  const end = zonedTimeToUtc({ year: parts.year, month: parts.month, day: parts.day, hour: 23, minute: 59, second: 59 }, timeZone);
+  return new Date(end.getTime() + 999);
 }
 
 export function addDays(date: Date, days: number, timeZone = activeTimezone()): Date {
@@ -139,6 +140,7 @@ export function formatDueLabel(dueIso: string | null, status: string, now: Date,
   if (!dueIso) return "No due date";
   const due = new Date(dueIso);
   if (Number.isNaN(due.getTime())) return "No due date";
+  if (status === "assigned" && due.getTime() < startOfDay(now, timeZone).getTime()) return "Past due · not marked";
   if (status === "missing" || status === "late") {
     if (isSameDay(due, now, timeZone)) return "Due tonight";
     const days = daysLate(dueIso, now, timeZone);

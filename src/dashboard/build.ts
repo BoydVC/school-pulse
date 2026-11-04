@@ -13,9 +13,9 @@ import {
 } from "../model/dates.js";
 import { activeTimezone } from "../time/zone.js";
 import { describeDueChange, describeNewAssignment, formatPercent } from "../model/english.js";
-import { compareSources, freshnessBadge, reauthBadgeText, sourceLabel, type SourceState } from "../model/freshness.js";
+import { compareSources, freshnessForAge, reauthBadgeText, sourceLabel, type SourceState } from "../model/freshness.js";
 import type { Assignment, Change, Course } from "../model/types.js";
-import { listAssignments, listChanges, listCourses, listGrades, listGradesForCourse, listStudents } from "../store/db.js";
+import { listAssignments, listChanges, listCourses, listGrades, listGradesForCourse, listSourceRuns, listStudents } from "../store/db.js";
 import { studentKey } from "../util/text.js";
 
 export interface AttentionItem {
@@ -97,7 +97,7 @@ export interface DashboardData {
   grades: GradeRow[];
   students: StudentCard[];
   changes: ChangeItem[];
-  sources: Array<{ source: string; label: string; state: SourceState; text: string; fetchedAt: string }>;
+  sources: Array<{ source: string; label: string; state: SourceState; text: string; fetchedAt: string; studentSourceId: string }>;
   counts: { students: number; assignments: number; sources: number; missing: number };
 }
 
@@ -191,8 +191,12 @@ export function buildDashboard(db: DatabaseSync, now: Date, options?: { reauth?:
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  const dayStart = startOfDay(now).getTime();
   const overdue = assignments
-    .filter((assignment) => (assignment.status === "missing" || assignment.status === "late") && assignment.due && new Date(assignment.due).getTime() < startOfDay(now).getTime())
+    .filter((assignment) => {
+      if (!assignment.due || new Date(assignment.due).getTime() >= dayStart) return false;
+      return assignment.status === "missing" || assignment.status === "late" || assignment.status === "assigned";
+    })
     .map(toAttention)
     .sort(compareAttention);
   const overdueIds = new Set(overdue.map((item) => item.id));
@@ -211,15 +215,20 @@ export function buildDashboard(db: DatabaseSync, now: Date, options?: { reauth?:
     };
   });
 
-  const freshest = new Map<string, string>();
-  const bump = (source: string, iso: string): void => {
-    const previous = freshest.get(source);
-    if (!previous || iso > previous) freshest.set(source, iso);
+  const runs = listSourceRuns(db);
+  const covered = new Set(runs.map((run) => `${run.source}\0${run.studentId}`));
+  const freshest = new Map<string, { source: string; studentId: string; fetchedAt: string }>();
+  for (const run of runs) freshest.set(`${run.source}\0${run.studentId}`, run);
+  const bump = (source: string, studentId: string, iso: string): void => {
+    const key = `${source}\0${studentId}`;
+    if (covered.has(key)) return;
+    const previous = freshest.get(key);
+    if (!previous || Date.parse(iso) > Date.parse(previous.fetchedAt)) freshest.set(key, { source, studentId, fetchedAt: iso });
   };
-  for (const student of students) bump(student.source, student.fetchedAt);
-  for (const course of courses) bump(course.source, course.fetchedAt);
-  for (const assignment of assignments) bump(assignment.source, assignment.fetchedAt);
-  for (const grade of grades) bump(grade.source, grade.fetchedAt);
+  for (const student of students) bump(student.source, student.id, student.fetchedAt);
+  for (const course of courses) bump(course.source, course.studentId, course.fetchedAt);
+  for (const assignment of assignments) bump(assignment.source, assignment.studentId, assignment.fetchedAt);
+  for (const grade of grades) bump(grade.source, grade.studentId, grade.fetchedAt);
 
   const schools = [...new Set(students.map((student) => student.school).filter((school): school is string => Boolean(school)))].sort();
 
@@ -243,11 +252,17 @@ export function buildDashboard(db: DatabaseSync, now: Date, options?: { reauth?:
     students: cards,
     changes: changes.map((change) => toChange(change, now, studentById, courseById, assignmentById)),
     sources: withReauth(
-      [...freshest.entries()]
-        .sort((a, b) => compareSources(a[0], b[0]))
-        .map(([source, fetchedAt]) => {
-          const badge = freshnessBadge(source, fetchedAt, now);
-          return { source, label: sourceLabel(source), state: badge.state, text: badge.text, fetchedAt };
+      [...freshest.values()]
+        .sort((a, b) => compareSources(a.source, b.source) || (studentById.get(a.studentId)?.name ?? "").localeCompare(studentById.get(b.studentId)?.name ?? ""))
+        .map((row) => {
+          const student = studentById.get(row.studentId);
+          const name = student?.name ?? "Student";
+          const age = Math.max(0, now.getTime() - new Date(row.fetchedAt).getTime());
+          const state = freshnessForAge(age);
+          const when = formatWhen(row.fetchedAt, now);
+          const label = sourceLabel(row.source);
+          const text = state === "fresh" ? `${label} · ${name} · ${when}` : `${label} · ${name} · ${state} · ${when}`;
+          return { source: row.source, label, state, text, fetchedAt: row.fetchedAt, studentSourceId: student?.sourceId ?? "" };
         }),
       options?.reauth ?? [],
     ),
@@ -255,35 +270,31 @@ export function buildDashboard(db: DatabaseSync, now: Date, options?: { reauth?:
       students: cards.length,
       assignments: assignments.length,
       sources: freshest.size,
-      missing: tonightItems.filter((item) => item.status === "missing").length,
+      missing: tonightItems.filter((item) => item.status === "missing" || item.status === "late").length,
     },
   };
 }
 
 function withReauth(sources: DashboardData["sources"], reauth: ReauthNotice[]): DashboardData["sources"] {
   if (reauth.length === 0) return sources;
-  const bySource = new Map<string, string[]>();
-  for (const notice of reauth) {
-    const ids = bySource.get(notice.source) ?? [];
-    if (notice.studentId && !ids.includes(notice.studentId)) ids.push(notice.studentId);
-    bySource.set(notice.source, ids);
-  }
+  const pending = reauth.filter((notice) => notice.studentId);
   const next = sources.map((source) => {
-    const ids = bySource.get(source.source);
-    if (!ids) return source;
-    bySource.delete(source.source);
-    return { ...source, state: "reauth" as const, text: reauthBadgeText(source.source, ids) };
+    const index = pending.findIndex((notice) => notice.source === source.source && notice.studentId === source.studentSourceId);
+    if (index < 0) return source;
+    const [notice] = pending.splice(index, 1);
+    return { ...source, state: "reauth" as const, text: reauthBadgeText(source.source, [notice!.studentId]) };
   });
-  for (const [source, ids] of bySource) {
+  for (const notice of pending) {
     next.push({
-      source,
-      label: sourceLabel(source),
+      source: notice.source,
+      label: sourceLabel(notice.source),
       state: "reauth",
-      text: reauthBadgeText(source, ids),
+      text: reauthBadgeText(notice.source, [notice.studentId]),
       fetchedAt: "",
+      studentSourceId: notice.studentId,
     });
   }
-  return next.sort((a, b) => compareSources(a.source, b.source));
+  return next.sort((a, b) => compareSources(a.source, b.source) || a.text.localeCompare(b.text));
 }
 
 function toGrade(course: Course, studentName: string, key: string, snaps: ReturnType<typeof listGradesForCourse>): GradeRow {
