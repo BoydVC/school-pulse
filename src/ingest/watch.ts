@@ -64,21 +64,29 @@ async function ingestFile(db: DatabaseSync, file: string, onResult?: (result: In
   }
   let lastError = "empty file";
   for (let attempt = 0; attempt < 4; attempt += 1) {
+    let result: IngestResult;
     try {
       const raw = readFileSync(file, "utf8");
       if (!raw.trim()) throw new Error("File is empty");
       const now = new Date();
       const snapshot = parseSnapshot({ source: sourceFromInboxPath(file), filename: file, raw, now });
-      const result = ingestSnapshot(db, snapshot, now);
-      await deliverWebhooks(db, result.alerts).catch((error: unknown) => {
-        console.error(`school-pulse: webhook failed: ${error instanceof Error ? error.message : "unknown"}`);
-      });
-      onResult?.(result, file);
-      return;
+      result = ingestSnapshot(db, snapshot, now);
     } catch (error) {
       lastError = error instanceof Error ? error.message : "unknown error";
       await new Promise((resolve) => setTimeout(resolve, 120));
+      continue;
     }
+    // The ingest transaction has committed. Never retry past this point: a retry would
+    // re-expand clock tokens like {{SP:NOW}} and could insert a second row and change.
+    await deliverWebhooks(db, result.alerts).catch((error: unknown) => {
+      console.error(`school-pulse: webhook failed: ${error instanceof Error ? error.message : "unknown"}`);
+    });
+    try {
+      onResult?.(result, file);
+    } catch (error) {
+      console.error(`school-pulse: ingest callback failed for ${file}: ${error instanceof Error ? error.message : "unknown"}`);
+    }
+    return;
   }
   console.error(`school-pulse: could not ingest ${file}: ${lastError}`);
 }

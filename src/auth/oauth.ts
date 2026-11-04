@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer, type ServerResponse } from "node:http";
 import { dirname } from "node:path";
 
@@ -211,6 +211,23 @@ export function writeToken(path: string, token: StoredToken): void {
   writeFileSync(path, `${JSON.stringify(token, null, 2)}\n`, { mode: 0o600 });
 }
 
+function generationPath(tokenPath: string): string {
+  return `${tokenPath}.generation`;
+}
+
+function claimTokenGeneration(tokenPath: string, generation: string): void {
+  mkdirSync(dirname(tokenPath), { recursive: true });
+  writeFileSync(generationPath(tokenPath), `${generation}\n`, { mode: 0o600 });
+}
+
+function ownsTokenGeneration(tokenPath: string, generation: string): boolean {
+  try {
+    return readFileSync(generationPath(tokenPath), "utf8").trim() === generation;
+  } catch {
+    return true;
+  }
+}
+
 /**
  * Installed-app loopback: bind 127.0.0.1, print the authorize URL, exchange the
  * code, and store the token under the data directory. Read-only scopes only.
@@ -220,6 +237,10 @@ export async function runInstalledAppFlow(options: AuthFlowOptions): Promise<{ p
   const state = randomBytes(16).toString("base64url");
   const challenge = codeChallenge(verifier);
   const timeoutMs = options.timeoutMs ?? 180_000;
+  // Stamp this sign-in as the newest one for the token file. A flow that started
+  // earlier and finishes later must not overwrite the token a newer flow wrote.
+  const generation = `${Date.now()}-${state}`;
+  if (!options.skipWrite && options.tokenPath) claimTokenGeneration(options.tokenPath, generation);
 
   const code = await new Promise<{ value: string; redirectUri: string }>((resolve, reject) => {
     const server = createServer((req, res) => {
@@ -290,7 +311,9 @@ export async function runInstalledAppFlow(options: AuthFlowOptions): Promise<{ p
   const path = options.tokenPath ?? "";
   if (!options.skipWrite) {
     if (!path) throw new Error("tokenPath is required to store a token");
-    writeToken(path, {
+    if (!ownsTokenGeneration(path, generation)) {
+      console.error("School Pulse: a newer sign-in started after this one, so this sign-in did not overwrite its token.");
+    } else writeToken(path, {
       access_token: token.access_token,
       refresh_token: token.refresh_token,
       token_type: token.token_type,
