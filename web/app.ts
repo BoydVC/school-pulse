@@ -475,9 +475,8 @@ function connect(): void {
     void refresh(pulse);
   });
   attachLiveStream(events, {
-    refresh: () => {
-      void refresh();
-    },
+    refresh: () => refresh(),
+    reconnect: () => connect(),
     setConnected: (on) => {
       connected = on;
       document.querySelector(".live-pill")?.setAttribute("data-state", on ? "on" : "off");

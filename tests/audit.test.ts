@@ -256,11 +256,11 @@ test("freshness follows each student and each successful fetch", () => {
   assert.equal(aged.sources.find((source) => source.text.includes("Kid One Fz"))?.state, "aging");
 });
 
-test("a reconnect and a return to the page fetch the board again", () => {
+test("a reconnect and a return to the page fetch the board again", async () => {
   let refreshes = 0;
   let connected = false;
   const events = { onopen: null as (() => void) | null, onerror: null as (() => void) | null };
-  attachLiveStream(events, {
+  const live = attachLiveStream(events, {
     refresh: () => {
       refreshes += 1;
     },
@@ -268,13 +268,18 @@ test("a reconnect and a return to the page fetch the board again", () => {
       connected = on;
     },
   });
+  const settle = () => new Promise((resolve) => setImmediate(resolve));
   events.onopen?.();
+  await settle();
   assert.equal(connected, true);
-  assert.equal(refreshes, 0);
+  assert.equal(refreshes, 1);
   events.onerror?.();
   assert.equal(connected, false);
   events.onopen?.();
-  assert.equal(refreshes, 1);
+  await settle();
+  assert.equal(refreshes, 2);
+  assert.equal(connected, true);
+  live.close();
   assert.equal(shouldRefreshOnVisibility("visible"), true);
   assert.equal(shouldRefreshOnVisibility("hidden"), false);
 });

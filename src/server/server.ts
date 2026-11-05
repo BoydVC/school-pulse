@@ -122,7 +122,7 @@ export async function startServer(options: {
       hub.add(res);
       const timer = setInterval(() => {
         try {
-          res.write(": ping\n\n");
+          res.write("event: ping\ndata: {}\n\n");
         } catch {
           clearInterval(timer);
         }
